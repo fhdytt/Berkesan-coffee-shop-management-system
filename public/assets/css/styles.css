@@ -8,7 +8,7 @@
 }
 
 body {
-    background-image: url(kopi.jpeg);
+    background-image: url(/public/assets/img/kopi.jpeg);
     font-family: 'Inter', sans-serif;
     display: flex;
     align-items: center;
