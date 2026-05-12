@@ -1,11 +1,592 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Berkesan Coffee | Tentang Kami – Cerita & Kehangatan</title>
+    <!-- Font Awesome 6 (Free Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts: modern & elegant -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #FDF9F4;  /* soft cream, seperti kertas hangat */
+            font-family: 'Inter', sans-serif;
+            color: #2C241E;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* custom scroll */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #E9DDD2;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #B48C6C;
+            border-radius: 10px;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 28px;
+        }
+
+        /* typography */
+        h1, h2, h3, .quote-text, .signature-label {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* navbar sederhana (khusus about, tetap bisa navigasi internal) */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 28px 0 20px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 2px solid rgba(180, 140, 108, 0.2);
+        }
+        .logo h2 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(130deg, #4D3523, #A5724E);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .logo span {
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            color: #A27453;
+            display: block;
+            margin-top: 4px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 500;
+            color: #3E2C21;
+            transition: 0.2s;
+            font-size: 0.95rem;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: #B47C54;
+            border-bottom-color: #C39672;
+        }
+
+        /* Hero About section */
+        .about-hero {
+            text-align: center;
+            padding: 50px 0 30px 0;
+        }
+        .about-hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #37251B;
+            letter-spacing: -1px;
+        }
+        .about-hero .hero-caption {
+            font-size: 1.2rem;
+            color: #7B5A3F;
+            margin-top: 16px;
+            font-style: italic;
+            border-top: 1px solid #EADCCE;
+            display: inline-block;
+            padding-top: 14px;
+        }
+
+        /* main story card (mimpi 2020) */
+        .story-card {
+            background: #FFFFFFE6;
+            backdrop-filter: blur(2px);
+            border-radius: 48px;
+            padding: 52px 48px;
+            margin: 32px 0 48px 0;
+            box-shadow: 0 25px 40px -18px rgba(0, 0, 0, 0.08);
+            border: 1px solid #F0E2D6;
+            transition: all 0.2s;
+        }
+        .story-card p {
+            font-size: 1.12rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+            color: #2F241E;
+        }
+        .story-card p:last-child {
+            margin-bottom: 0;
+        }
+        .highlight {
+            font-weight: 700;
+            color: #B2744A;
+            background: rgba(178, 116, 74, 0.08);
+            padding: 0 6px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .quote-inline {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.25rem;
+            border-left: 4px solid #DCC2AC;
+            padding-left: 24px;
+            margin: 24px 0;
+            color: #6F4F34;
+        }
+
+        /* nilai & komitmen (grid) */
+        .values-section {
+            margin: 50px 0 40px;
+        }
+        .section-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 32px;
+            position: relative;
+            display: inline-block;
+        }
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            width: 70px;
+            height: 3px;
+            background: #D2B48C;
+            border-radius: 4px;
+        }
+        .values-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .value-item {
+            flex: 1 1 240px;
+            background: #FFFBF7;
+            border-radius: 32px;
+            padding: 32px 20px;
+            text-align: center;
+            transition: 0.25s ease;
+            border: 1px solid #F4E7DD;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.02);
+        }
+        .value-item:hover {
+            transform: translateY(-6px);
+            border-color: #DCC2AC;
+            box-shadow: 0 20px 28px -12px rgba(98, 60, 34, 0.12);
+        }
+        .value-icon {
+            font-size: 2.6rem;
+            color: #BA8A63;
+            margin-bottom: 20px;
+        }
+        .value-item h3 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .value-item p {
+            font-size: 0.9rem;
+            color: #6C5340;
+        }
+
+        /* Signature preview (hanya preview tentang menu signature sebagai bagian cerita) */
+        .signature-preview {
+            background: #F7EFE6;
+            border-radius: 40px;
+            padding: 32px 30px;
+            margin: 40px 0 30px;
+        }
+        .preview-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            font-family: 'Playfair Display', serif;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .signature-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            justify-content: flex-start;
+        }
+        .sig-badge {
+            background: #FFFFFFC9;
+            backdrop-filter: blur(4px);
+            padding: 8px 24px;
+            border-radius: 60px;
+            font-weight: 600;
+            color: #5B3A25;
+            border: 1px solid #E2CFBE;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .sig-badge i {
+            margin-right: 8px;
+            color: #B47C54;
+        }
+        .sig-badge:hover {
+            background: #FFFFFF;
+            transform: scale(1.02);
+            border-color: #C29A74;
+        }
+
+        /* connecting worlds special banner (ringan) */
+        .worlds-banner {
+            background: #2E241F;
+            border-radius: 56px;
+            padding: 48px 36px;
+            margin: 55px 0 35px;
+            text-align: center;
+            color: #FEF0E2;
+        }
+        .worlds-banner h3 {
+            font-size: 2rem;
+            font-family: 'Playfair Display', serif;
+            font-weight: 500;
+        }
+        .worlds-banner p {
+            font-size: 1.15rem;
+            margin-top: 12px;
+            opacity: 0.9;
+        }
+        .tiny-button {
+            background: none;
+            border: 1px solid #DABB9C;
+            color: #F2E1D0;
+            padding: 10px 28px;
+            border-radius: 60px;
+            margin-top: 24px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .tiny-button:hover {
+            background: #DABB9C;
+            color: #2E241F;
+        }
+
+        /* modal interaksi "Pesan" atau sapaan */
+        .modal-message {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.65);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-card {
+            background: #FFFBF5;
+            max-width: 440px;
+            width: 88%;
+            border-radius: 44px;
+            padding: 36px 28px;
+            text-align: center;
+            box-shadow: 0 35px 50px rgba(0,0,0,0.2);
+            animation: gentlePop 0.25s ease;
+        }
+        @keyframes gentlePop {
+            from { opacity: 0; transform: scale(0.96);}
+            to { opacity: 1; transform: scale(1);}
+        }
+        .modal-card i {
+            font-size: 2.5rem;
+            color: #BF8E68;
+            margin-bottom: 12px;
+        }
+        .modal-card h4 {
+            font-size: 1.8rem;
+            font-family: 'Playfair Display', serif;
+            margin: 10px 0;
+        }
+        .modal-card p {
+            margin: 16px 0 20px;
+            color: #4F3627;
+        }
+        .close-modal-btn {
+            background: #B47C54;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 10px 28px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .close-modal-btn:hover {
+            background: #9A623F;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px 32px;
+            border-top: 1px solid #E9DBCF;
+            margin-top: 50px;
+            font-size: 0.8rem;
+            color: #826547;
+        }
+
+        @media (max-width: 720px) {
+            .story-card { padding: 32px 24px; }
+            .about-hero h1 { font-size: 2.3rem; }
+            .section-title { font-size: 1.8rem; }
+            .navbar { flex-direction: column; text-align: center; }
+        }
+    </style>
 </head>
 <body>
-    <h1>jink</h1>
+
+<div class="container">
+    <!-- Simple Navbar (tentang, signature link, dan order interaktif) -->
+    <div class="navbar">
+        <div class="logo">
+            <h2>berkesan coffee</h2>
+            <span>— tempat pulang & cerita —</span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="active">Tentang</a>
+            <a href="#" id="scrollToSignature">Signature</a>
+            <a href="#" id="openOrderFromNav">Pesan</a>
+        </div>
+    </div>
+
+    <!-- Hero About -->
+    <div class="about-hero">
+        <h1>tentang ruang & rasa</h1>
+        <div class="hero-caption">“lebih dari kedai kopi, inilah rumah untuk berbagi cerita”</div>
+    </div>
+
+    <!-- Main story section: mimpi 2020, komitmen (FROM IMAGE) -->
+    <div class="story-card">
+        <p>🌱 <span class="highlight">Berawal dari sebuah mimpi sedemikian adi tahun 2020</span>, Berkesan Coffee hadir dengan satu tujuan utama: menciptakan ruang yang nyaman, <strong>banget</strong>, dan penuh arti. Bagi setiap orang yang datang, kami percaya bahwa secangkir kopi bukan hanya tentang rasa, tetapi tentang <strong>momen</strong> – tentang cerita yang dibagikan, tawa yang tercipta, dan ketenangan yang dirasakan.</p>
+        <div class="quote-inline">
+            <i class="fas fa-mug-hot" style="margin-right: 10px;"></i> Setiap racikan dibuat dengan perhatian dan ketulusan, agar setiap tegukan menjadi pengalaman yang tidak hanya nikmat, tetapi meninggalkan kesan mendalam.
+        </div>
+        <p>Dengan komitmen menghadirkan kualitas terbaik, kami meracik biji pilihan dan metode seduh yang menghormati cita rasa asli. Namun yang paling utama adalah <span class="highlight">kehangatan</span> yang selalu kami rawat. Lebih dari sekadar kedai kopi, Berkesan Coffee adalah <strong>tempat untuk pulang</strong> – tempat di mana setiap kunjungan terasa berarti dan kenangan baru selalu tercipta.</p>
+    </div>
+
+    <!-- Nilai & komitmen (atribut tambahan dari filosofi) -->
+    <div class="values-section">
+        <h2 class="section-title">inti dari setiap cangkir</h2>
+        <div class="values-grid">
+            <div class="value-item">
+                <div class="value-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                <h3>Ketulusan</h3>
+                <p>Setiap sajian kami bangun dengan hati, dari barista hingga layanan.</p>
+            </div>
+            <div class="value-item">
+                <div class="value-icon"><i class="fas fa-users"></i></div>
+                <h3>Kebersamaan</h3>
+                <p>Ruang inklusif untuk bertukar cerita, canda, serta keheningan yang damai.</p>
+            </div>
+            <div class="value-item">
+                <div class="value-icon"><i class="fas fa-seedling"></i></div>
+                <h3>Kesan Abadi</h3>
+                <p>Bukan hanya kopi, tapi kenangan yang terus hidup di ingatan.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signature Preview (menampilkan 4 signature dari deskripsi gambar) -->
+    <div class="signature-preview" id="signaturePreview">
+        <div class="preview-title">
+            <i class="fas fa-star" style="color: #C28B5C;"></i> 
+            <span>Signature Kami — kenangan dalam setiap nama</span>
+        </div>
+        <div class="signature-badges">
+            <div class="sig-badge"><i class="fas fa-leaf"></i> Seasonal Item</div>
+            <div class="sig-badge"><i class="fas fa-hourglass-half"></i> Walktu</div>
+            <div class="sig-badge"><i class="fas fa-hand-peace"></i> Jumpa</div>
+            <div class="sig-badge"><i class="fas fa-moon"></i> Dia</div>
+        </div>
+        <p style="margin-top: 24px; font-size: 0.85rem; color:#6F4F34; border-top: 1px dashed #EAD3C0; padding-top: 18px;">
+            <i class="fas fa-quote-left"></i> Seasonal Item menghadirkan cerita musiman, Walktu membawa kita melambat, Jumpa merayakan pertemuan, dan Dia adalah rasa nostalgia yang abadi.
+        </p>
+    </div>
+
+    <!-- Connecting worlds through Coffee (brand message) -->
+    <div class="worlds-banner">
+        <h3>Connecting worlds through Coffee.</h3>
+        <p>dari satu cangkir, kita merajut dunia yang lebih hangat</p>
+        <button class="tiny-button" id="connectBtn"><i class="fas fa-heart"></i> Rasakan Ceritanya</button>
+    </div>
+
+    <!-- Pesan kecil: selalu ada ruang untuk bertanya -->
+    <div style="text-align: center; margin: 20px 0 20px;">
+        <span style="background: #EFE2D6; padding: 8px 26px; border-radius: 60px; font-size: 0.85rem;"><i class="fas fa-phone-alt"></i> Dago Eat Park, Villa Dago Pamulang – Setiap hari 09.00–23.00</span>
+    </div>
+</div>
+
+<footer>
+    <p>© 2025 Berkesan Coffee — ruang yang penuh arti, dari mimpi 2020 hingga kini. Setiap kunjungan adalah pulang.</p>
+    <p style="margin-top: 10px;"><i class="fas fa-coffee"></i> "Kopi yang dikenang, karena cerita yang terbagi"</p>
+</footer>
+
+<!-- Modal untuk interaksi order & sapaan -->
+<div id="universalModal" class="modal-message">
+    <div class="modal-card">
+        <i class="fas fa-mug-hot"></i>
+        <h4>Pesan & Rasa</h4>
+        <p>Terima kasih sudah ingin merasakan Berkesan Coffee. Setiap pesanan akan diantar dengan kehangatan penuh cerita. Untuk memesan Signature (Seasonal Item, Walktu, Jumpa, Dia) silakan hubungi langsung via WhatsApp kami.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; margin: 20px 0 10px;">
+            <span style="background:#F1E5DA; padding: 6px 14px; border-radius: 50px;"><i class="fab fa-whatsapp"></i> +62 812 3456 7890</span>
+            <span style="background:#F1E5DA; padding: 6px 14px; border-radius: 50px;"><i class="fas fa-store"></i> Bisa datang langsung</span>
+        </div>
+        <button class="close-modal-btn" id="closeModalUniversal">Tutup & kembali hangat</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // Element modal
+        const modalElement = document.getElementById('universalModal');
+        const closeModalBtn = document.getElementById('closeModalUniversal');
+        const openOrderNav = document.getElementById('openOrderFromNav');
+        const connectBtn = document.getElementById('connectBtn');
+        const scrollToSig = document.getElementById('scrollToSignature');
+        const signaturePreviewDiv = document.getElementById('signaturePreview');
+
+        // fungsi buka modal
+        function openModal() {
+            if(modalElement) {
+                modalElement.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeModalFunction() {
+            if(modalElement) {
+                modalElement.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        // tombol order dari nav & tombol connect (menampilkan informasi pesan dan kehangatan)
+        if(openOrderNav) {
+            openOrderNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal();
+            });
+        }
+        if(connectBtn) {
+            connectBtn.addEventListener('click', () => {
+                openModal();
+            });
+        }
+        if(closeModalBtn) {
+            closeModalBtn.addEventListener('click', closeModalFunction);
+        }
+        // klik di luar modal menutup
+        window.addEventListener('click', (e) => {
+            if(e.target === modalElement) {
+                closeModalFunction();
+            }
+        });
+
+        // Smooth scroll ke bagian Signature preview
+        if(scrollToSig) {
+            scrollToSig.addEventListener('click', (e) => {
+                e.preventDefault();
+                signaturePreviewDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // efek highlight sementara
+                signaturePreviewDiv.style.transition = '0.3s';
+                signaturePreviewDiv.style.backgroundColor = '#FFF2E8';
+                setTimeout(() => {
+                    signaturePreviewDiv.style.backgroundColor = '';
+                }, 700);
+            });
+        }
+
+        // tambahan interaksi: jika pengguna klik pada salah satu signature badge, tampilkan pesan unik
+        const allBadges = document.querySelectorAll('.sig-badge');
+        allBadges.forEach(badge => {
+            badge.addEventListener('click', function() {
+                const name = this.innerText.trim();
+                let customMessage = '';
+                if(name.includes('Seasonal')) customMessage = '🍂 Seasonal Item: nikmati edisi terbatas yang hanya datang pada musimnya, rasa yang tidak akan terlupakan.';
+                else if(name.includes('Walktu')) customMessage = '⏳ Walktu: sajian yang mengajakmu menikmati waktu, setiap tegukan terasa lambat dan bermakna.';
+                else if(name.includes('Jumpa')) customMessage = '🤝 Jumpa: perjumpaan hangat dalam cangkir, untuk obrolan panjang dan tawa tulus.';
+                else if(name.includes('Dia')) customMessage = '🌙 Dia: rasa yang selalu dirindukan, kenangan dalam setiap aroma.';
+                else customMessage = 'Nikmati keistimewaan dari setiap signature Berkesan Coffee.';
+                
+                // alert halus dengan modal sederhana? kita buat alert modern pakai modal sementara
+                // tapi tidak mengganggu, kita gunakan fungsi alert dengan style native tapi lebih baik pakai notifikasi sementara
+                // tetapi agar seamless, kita bisa gunakan modal dengan pesan khusus, untuk simplicity kita buat div toast manual? Tapi kita buat alert modern.
+                // Agar tetap pada nuansa about, kita gunakan confirm style? supaya imersif, kita pakai temporary snackbar sederhana (alert dengan style)
+                // lebih baik bikin toast kecil.
+                const toast = document.createElement('div');
+                toast.innerText = `✨ ${customMessage}`;
+                toast.style.position = 'fixed';
+                toast.style.bottom = '30px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.backgroundColor = '#37251B';
+                toast.style.color = '#FDEBDC';
+                toast.style.padding = '12px 24px';
+                toast.style.borderRadius = '60px';
+                toast.style.fontSize = '0.85rem';
+                toast.style.zIndex = '1100';
+                toast.style.fontWeight = '500';
+                toast.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+                toast.style.backdropFilter = 'blur(8px)';
+                toast.style.fontFamily = "'Inter', sans-serif";
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 400);
+                }, 2800);
+            });
+        });
+
+        // additional : jika hover pada logo, ada pesan kecil yang ramah
+        const logoEl = document.querySelector('.logo h2');
+        if(logoEl) {
+            logoEl.addEventListener('click', () => {
+                const thanksMsg = document.createElement('div');
+                thanksMsg.innerText = '☕ Terima kasih telah singgah di ruang kami. Setiap cerita berarti.';
+                thanksMsg.style.position = 'fixed';
+                thanksMsg.style.bottom = '20px';
+                thanksMsg.style.left = '20px';
+                thanksMsg.style.backgroundColor = '#FFF1E6';
+                thanksMsg.style.color = '#4F2F1C';
+                thanksMsg.style.padding = '10px 20px';
+                thanksMsg.style.borderRadius = '40px';
+                thanksMsg.style.fontSize = '0.8rem';
+                thanksMsg.style.boxShadow = '0 5px 14px rgba(0,0,0,0.1)';
+                thanksMsg.style.zIndex = '1099';
+                thanksMsg.style.borderLeft = '5px solid #C88C62';
+                document.body.appendChild(thanksMsg);
+                setTimeout(() => {
+                    thanksMsg.style.opacity = '0';
+                    setTimeout(() => thanksMsg.remove(), 500);
+                }, 2500);
+            });
+        }
+    })();
+</script>
 </body>
 </html>
