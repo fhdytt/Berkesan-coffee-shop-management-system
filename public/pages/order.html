@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Berkesan Coffee | Pesan 10 Menu Minuman</title>
+    <link rel="stylesheet" href="../assets/css/order.css">
+</head>
+<body>
+<div class="berkesan-container">
+    <div class="cafe-header">
+        <h1>berkesan coffee</h1>
+        <p>✦ 10 aroma autentik | pesan & nikmati ✦</p>
+    </div>
+
+    <div class="menu-grid" id="menuGrid">
+        <!-- 10 menu minuman akan di-generate dengan javascript agar dinamis dan mudah -->
+    </div>
+
+    <!-- total pembayaran global -->
+    <div class="global-total-bar">
+        <div class="global-label">
+            🧾 TOTAL SELURUH PEMBELIAN
+        </div>
+        <div class="grand-total" id="grandTotalDisplay">Rp 0</div>
+        <div class="action-buttons">
+            <button class="btn-primary" id="checkoutBtn">✔️ Pesanan Sekarang</button>
+            <button class="btn-secondary" id="resetAllBtn">⟳ Reset Semua</button>
+        </div>
+    </div>
+    <div class="notif-area" id="globalNotif">
+        ☕ Selamat datang! Pilih jumlah setiap menu favorit di Berkesan Coffee.
+    </div>
+</div>
+
+<script src="../assets/js/order.js"></script>
+</body>
+</html>

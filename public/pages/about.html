@@ -1,11 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Berkesan Coffee | Tentang Kami – Cerita & Kehangatan</title>
+    <!-- Font Awesome 6 (Free Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts: modern & elegant -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/about.css">
 </head>
 <body>
-    <h1>jink</h1>
+
+<div class="container">
+    <!-- Simple Navbar (tentang, signature link, dan order interaktif) -->
+    <div class="navbar">
+        <div class="logo">
+            <h2>berkesan coffee</h2>
+            <span>— tempat pulang & cerita —</span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="active">Tentang</a>
+            <a href="#" id="scrollToSignature">Signature</a>
+            <a href="#" id="openOrderFromNav">Pesan</a>
+        </div>
+    </div>
+
+    <!-- Hero About -->
+    <div class="about-hero">
+        <h1>tentang ruang & rasa</h1>
+        <div class="hero-caption">“lebih dari kedai kopi, inilah rumah untuk berbagi cerita”</div>
+    </div>
+
+    <!-- Main story section: mimpi 2020, komitmen (FROM IMAGE) -->
+    <div class="story-card">
+        <p>🌱 <span class="highlight">Berawal dari sebuah mimpi sedemikian adi tahun 2020</span>, Berkesan Coffee hadir dengan satu tujuan utama: menciptakan ruang yang nyaman, <strong>banget</strong>, dan penuh arti. Bagi setiap orang yang datang, kami percaya bahwa secangkir kopi bukan hanya tentang rasa, tetapi tentang <strong>momen</strong> – tentang cerita yang dibagikan, tawa yang tercipta, dan ketenangan yang dirasakan.</p>
+        <div class="quote-inline">
+            <i class="fas fa-mug-hot" style="margin-right: 10px;"></i> Setiap racikan dibuat dengan perhatian dan ketulusan, agar setiap tegukan menjadi pengalaman yang tidak hanya nikmat, tetapi meninggalkan kesan mendalam.
+        </div>
+        <p>Dengan komitmen menghadirkan kualitas terbaik, kami meracik biji pilihan dan metode seduh yang menghormati cita rasa asli. Namun yang paling utama adalah <span class="highlight">kehangatan</span> yang selalu kami rawat. Lebih dari sekadar kedai kopi, Berkesan Coffee adalah <strong>tempat untuk pulang</strong> – tempat di mana setiap kunjungan terasa berarti dan kenangan baru selalu tercipta.</p>
+    </div>
+
+    <!-- Nilai & komitmen (atribut tambahan dari filosofi) -->
+    <div class="values-section">
+        <h2 class="section-title">inti dari setiap cangkir</h2>
+        <div class="values-grid">
+            <div class="value-item">
+                <div class="value-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                <h3>Ketulusan</h3>
+                <p>Setiap sajian kami bangun dengan hati, dari barista hingga layanan.</p>
+            </div>
+            <div class="value-item">
+                <div class="value-icon"><i class="fas fa-users"></i></div>
+                <h3>Kebersamaan</h3>
+                <p>Ruang inklusif untuk bertukar cerita, canda, serta keheningan yang damai.</p>
+            </div>
+            <div class="value-item">
+                <div class="value-icon"><i class="fas fa-seedling"></i></div>
+                <h3>Kesan Abadi</h3>
+                <p>Bukan hanya kopi, tapi kenangan yang terus hidup di ingatan.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signature Preview (menampilkan 4 signature dari deskripsi gambar) -->
+    <div class="signature-preview" id="signaturePreview">
+        <div class="preview-title">
+            <i class="fas fa-star" style="color: #C28B5C;"></i> 
+            <span>Signature Kami — kenangan dalam setiap nama</span>
+        </div>
+        <div class="signature-badges">
+            <div class="sig-badge"><i class="fas fa-leaf"></i> Seasonal Item</div>
+            <div class="sig-badge"><i class="fas fa-hourglass-half"></i> Walktu</div>
+            <div class="sig-badge"><i class="fas fa-hand-peace"></i> Jumpa</div>
+            <div class="sig-badge"><i class="fas fa-moon"></i> Dia</div>
+        </div>
+        <p style="margin-top: 24px; font-size: 0.85rem; color:#6F4F34; border-top: 1px dashed #EAD3C0; padding-top: 18px;">
+            <i class="fas fa-quote-left"></i> Seasonal Item menghadirkan cerita musiman, Walktu membawa kita melambat, Jumpa merayakan pertemuan, dan Dia adalah rasa nostalgia yang abadi.
+        </p>
+    </div>
+
+    <!-- Connecting worlds through Coffee (brand message) -->
+    <div class="worlds-banner">
+        <h3>Connecting worlds through Coffee.</h3>
+        <p>dari satu cangkir, kita merajut dunia yang lebih hangat</p>
+        <button class="tiny-button" id="connectBtn"><i class="fas fa-heart"></i> Rasakan Ceritanya</button>
+    </div>
+
+    <!-- Pesan kecil: selalu ada ruang untuk bertanya -->
+    <div style="text-align: center; margin: 20px 0 20px;">
+        <span style="background: #EFE2D6; padding: 8px 26px; border-radius: 60px; font-size: 0.85rem;"><i class="fas fa-phone-alt"></i> Dago Eat Park, Villa Dago Pamulang – Setiap hari 09.00–23.00</span>
+    </div>
+</div>
+
+<footer>
+    <p>© 2025 Berkesan Coffee — ruang yang penuh arti, dari mimpi 2020 hingga kini. Setiap kunjungan adalah pulang.</p>
+    <p style="margin-top: 10px;"><i class="fas fa-coffee"></i> "Kopi yang dikenang, karena cerita yang terbagi"</p>
+</footer>
+
+<!-- Modal untuk interaksi order & sapaan -->
+<div id="universalModal" class="modal-message">
+    <div class="modal-card">
+        <i class="fas fa-mug-hot"></i>
+        <h4>Pesan & Rasa</h4>
+        <p>Terima kasih sudah ingin merasakan Berkesan Coffee. Setiap pesanan akan diantar dengan kehangatan penuh cerita. Untuk memesan Signature (Seasonal Item, Walktu, Jumpa, Dia) silakan hubungi langsung via WhatsApp kami.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; margin: 20px 0 10px;">
+            <span style="background:#F1E5DA; padding: 6px 14px; border-radius: 50px;"><i class="fab fa-whatsapp"></i> +62 812 3456 7890</span>
+            <span style="background:#F1E5DA; padding: 6px 14px; border-radius: 50px;"><i class="fas fa-store"></i> Bisa datang langsung</span>
+        </div>
+        <button class="close-modal-btn" id="closeModalUniversal">Tutup & kembali hangat</button>
+    </div>
+</div>
+
+<script  src="../assets/js/about.js"></script>
 </body>
 </html>
