@@ -1,11 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Login Admin | Bean Signature Coffee</title>
+  <!-- Google Fonts: Playfair untuk kesan elegan kopi, Inter untuk body modern -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/login.css">
 </head>
 <body>
-    <h1>Halaman Login</h1>
+<div class="login-card">
+  <div class="login-header">
+    <div class="logo-circle">
+      <i class="fas fa-mug-hot"></i>
+    </div>
+    <h1>Berkesan</h1>
+    <p>Admin Portal · Premium Coffee House</p>
+    <div class="coffee-badge">
+      <i class="fas fa-leaf"></i> Single Origin Access
+    </div>
+  </div>
+
+  <div class="login-form">
+    <div id="messageBox" class="message-area"></div>
+
+    <form id="adminLoginForm" action="#" method="POST">
+      <div class="input-group">
+        <label><i class="fas fa-user-barista"></i> Username / Email</label>
+        <div class="input-field">
+          <i class="fas fa-envelope"></i>
+          <input type="text" id="username" name="username" placeholder="admin@beansignature.com" autocomplete="username">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label><i class="fas fa-key"></i> Kata Sandi</label>
+        <div class="input-field">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+      </div>
+
+      <div class="login-options">
+        <label class="checkbox">
+          <input type="checkbox" id="rememberCheckbox"> <span>Ingatkan saya</span>
+        </label>
+        <a href="#" id="forgotPasswordLink" class="forgot-link"><i class="fas fa-coffee"></i> Lupa sandi?</a>
+      </div>
+
+      <button type="submit" class="login-btn" id="loginButton">
+        <i class="fas fa-arrow-right-to-bracket"></i> Masuk ke Dashboard
+      </button>
+    </form>
+
+    <div class="demo-creds">
+      <p>
+        <i class="fas fa-mug-saucer"></i> Kredensial demo barista:
+        <span class="demo-badge">admin@beansignature.com</span>
+        <span class="demo-badge">admin</span>
+        <span class="demo-badge">sandi: <strong>kopi123</strong></span>
+      </p>
+      <p style="font-size: 0.65rem; margin-top: 5px;"><i class="fas fa-info-circle"></i> Akses penuh manajemen coffee shop</p>
+    </div>
+  </div>
+  <div class="footer-note">
+    <i class="fas fa-crown"></i> Brewed with passion · Admin Secure Zone
+  </div>
+</div>
+
+<script src="../assets/js/login.js">
+</script>
 </body>
 </html>
