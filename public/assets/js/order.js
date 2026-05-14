@@ -4,21 +4,29 @@
     // Untuk memenuhi "foto yang sudah saya kirim", saya menyematkan gambar minuman yang mirip asli (premium)
     // ================================
     const MENU_ITEMS = [
-        { id: 0, name: "Dia", price: 32000, img: "https://placehold.co/300x300/E6D5B8/5C3E1F?text=☕+Berkesan+Latte&font=playfair" },
-        { id: 1, name: "Waktu", price: 38000, img: "https://placehold.co/300x300/F2E0C9/B45F2B?text=🍯+Caramel+Macchiato&font=playfair" },
-        { id: 2, name: "Jumpa", price: 35000, img: "https://placehold.co/300x300/EFDABF/A45D2A?text=🌰+Vanilla+Hazelnut&font=playfair" },
-        { id: 3, name: "Creamy Latte", price: 39000, img: "https://placehold.co/300x300/EAD0AF/6B3E1C?text=🍫+Mocha+Velvet&font=playfair" },
-        { id: 4, name: "Americano", price: 34000, img: "https://placehold.co/300x300/F2E5D4/9B5E2E?text=🥥+Gula+Aren+Coconut&font=playfair" },
-        { id: 5, name: "Huzelnut", price: 37000, img: "https://placehold.co/300x300/EEDBBC/784A24?text=🥃+Espresso+Rum&font=playfair" },
-        { id: 6, name: "Sunset Brew", price: 41000, img: "https://placehold.co/300x300/DAE3C5/48632E?text=🍵+Matcha+Cream&font=playfair" },
-        { id: 7, name: "Mocpresso", price: 36000, img: "https://placehold.co/300x300/F6E1C8/AF5F29?text=🧈+Butterscotch&font=playfair" },
-        { id: 8, name: "Blue Pea Vanilla", price: 33000, img: "https://placehold.co/300x300/D8E2F0/33507A?text=🌸+Blue+Pea&font=playfair" },
-        { id: 9, name: "Affogato Delight", price: 43000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-        { id: 10, name: "Affogato Delight", price: 43000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" }
+        { id: 0, name: "Waktu 👍 ", price: 20000, img: "https://placehold.co/300x300/E6D5B8/5C3E1F?text=☕+Berkesan+Latte&font=playfair" },
+        { id: 1, name: "Jumpa", price: 20000, img: "https://placehold.co/300x300/F2E0C9/B45F2B?text=🍯+Caramel+Macchiato&font=playfair" },
+        { id: 2, name: "Dia 👍", price: 20000, img: "https://placehold.co/300x300/EFDABF/A45D2A?text=🌰+Vanilla+Hazelnut&font=playfair" },
+        { id: 3, name: "Creamy Berries", price: 22000, img: "https://placehold.co/300x300/EAD0AF/6B3E1C?text=🍫+Mocha+Velvet&font=playfair" },
+        { id: 4, name: "Cappucino / Cafe Latte", price: 23000, img: "https://placehold.co/300x300/F2E5D4/9B5E2E?text=🥥+Gula+Aren+Coconut&font=playfair" },
+        { id: 5, name: "Huzelnut Latte", price: 20000, img: "https://placehold.co/300x300/EEDBBC/784A24?text=🥃+Espresso+Rum&font=playfair" },
+        { id: 6, name: "Creamy Latte", price: 18000, img: "https://placehold.co/300x300/DAE3C5/48632E?text=🍵+Matcha+Cream&font=playfair" },
+        { id: 7, name: "Americano", price: 18000, img: "https://placehold.co/300x300/F6E1C8/AF5F29?text=🧈+Butterscotch&font=playfair" },
+        { id: 8, name: "Fizz Me Up", price: 22000, img: "https://placehold.co/300x300/D8E2F0/33507A?text=🌸+Blue+Pea&font=playfair" },
+        { id: 9, name: "Sunset Brew", price: 22000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+        { id: 10, name: "Chocolate", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+         { id: 10, name: "Red Velvet", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+          { id: 10, name: "Matcha", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+           { id: 10, name: "Vanilla Crumbs", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+            { id: 10, name: "Lemon Tea", price: 15000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+             { id: 10, name: "Lychee Tea", price: 15000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+              { id: 10, name: "Tea", price: 10000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+               { id: 10, name: "V60", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
+               
     ];
 
     // State untuk menyimpan jumlah masing-masing menu (default 0)
-    let quantities = new Array(11).fill(0);
+    let quantities = new Array(18).fill(0);
 
     // Helper: format Rupiah
     function formatRupiah(amount) {
