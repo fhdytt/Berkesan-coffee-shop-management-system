@@ -1,1 +1,7 @@
-/app/config/config.php
+node_modules/
+.env
+.env.local
+npm-debug.log
+.DS_Store
+.idea/
+*.log
