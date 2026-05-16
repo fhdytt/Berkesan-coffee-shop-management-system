@@ -344,11 +344,15 @@
 
           <!-- BUTTON -->
           <button
+          
             type="submit"
+
             class="w-full btn-gradient text-[#f7facc] font-bold py-4 rounded-2xl transition shadow-lg shadow-[#63773c]/30"
           >
             <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i>
+            <a href="/admin/index.html">
             Masuk ke Dashboard
+            </a>
           </button>
 
         </form>
@@ -400,10 +404,8 @@
 <script>
 
 function togglePassword() {
-
   const input = document.getElementById('passwordInput');
   const icon = document.getElementById('eyeIcon');
-
   if(input.type === 'password'){
     input.type = 'text';
     icon.classList.remove('fa-eye');
