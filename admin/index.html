@@ -1,118 +1,587 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Berkesan Admin | Coffee Shop Dashboard</title>
-  <!-- Google Fonts: Plus Jakarta Sans & Playfair Display untuk kesan elegan coffee -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-  <!-- Font Awesome 6 (Free Icons) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Chart.js CDN untuk grafik ringan -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="../public/assets/css/index.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Berkesan Admin Dashboard</title>
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <!-- ChartJS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body{
+      font-family: 'Inter', sans-serif;
+      background: #f7facc;
+    }
+
+    .glass-card{
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    .shadow-soft{
+      box-shadow: 0 10px 30px rgba(5,5,3,0.08);
+    }
+
+    .sidebar-gradient{
+      background: linear-gradient(
+        180deg,
+        #63773c 0%,
+        #836527 100%
+      );
+    }
+
+    .top-gradient{
+      background: linear-gradient(
+        90deg,
+        #63773c 0%,
+        #bfc56b 100%
+      );
+    }
+
+    .menu-active{
+      background: rgba(247,250,204,0.15);
+      border: 1px solid rgba(247,250,204,0.1);
+    }
+  </style>
 </head>
-<body>
-<div class="dashboard-wrapper" id="app">
-  <!-- header -->
-  <div class="admin-header">
-    <div class="brand-area">
-      <div class="coffee-icon">
-        <i class="fas fa-mug-hot"></i>
-      </div>
-      <div class="brand-text">
-        <h1>Berkesan Admin</h1>
-        <span>Coffee Shop Management · 灵感</span>
-      </div>
-    </div>
-    <div class="admin-profile">
-      <i class="fas fa-user-chef"></i>
-      <span class="name">Selamat datang, <strong id="adminNameDisplay">Barista Master</strong></span>
-      <button class="logout-btn" id="logoutAdminBtn"><i class="fas fa-sign-out-alt"></i></button>
-    </div>
-  </div>
 
-  <!-- stat cards -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-info">
-        <h4>Total Pendapatan</h4>
-        <div class="stat-number" id="totalRevenue">Rp 0</div>
-        <small style="color:#a17f5f;">+12% dari minggu lalu</small>
-      </div>
-      <div class="stat-icon"><i class="fas fa-coins"></i></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-info">
-        <h4>Pesanan Hari Ini</h4>
-        <div class="stat-number" id="totalOrders">0</div>
-        <small style="color:#a17f5f;">termasuk takeaway</small>
-      </div>
-      <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-info">
-        <h4>Menu Terjual</h4>
-        <div class="stat-number" id="itemsSold">0</div>
-        <small style="color:#a17f5f;">item kopi & non kopi</small>
-      </div>
-      <div class="stat-icon"><i class="fas fa-mug-saucer"></i></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-info">
-        <h4>Rating Pelanggan</h4>
-        <div class="stat-number">4.8 ★</div>
-        <small style="color:#a17f5f;">dari 230 review</small>
-      </div>
-      <div class="stat-icon"><i class="fas fa-star"></i></div>
-    </div>
-  </div>
+<body class="text-[#050503]">
 
-  <!-- Chart + Recent orders -->
-  <div class="dashboard-panels">
-    <div class="panel">
-      <div class="panel-title">
-        <h3><i class="fas fa-chart-line" style="margin-right: 8px;"></i> Tren Penjualan 7 Hari</h3>
-        <i class="fas fa-calendar-alt"></i>
-      </div>
-      <canvas id="salesChart" width="400" height="200" style="max-height: 240px;"></canvas>
-    </div>
-    <div class="panel">
-      <div class="panel-title">
-        <h3><i class="fas fa-hourglass-half"></i> Pesanan Terbaru</h3>
-        <i class="fas fa-ellipsis-h"></i>
-      </div>
-      <div class="order-list" id="recentOrdersList">
-        <!-- dynamic orders -->
-      </div>
-    </div>
-  </div>
+<div class="min-h-screen flex">
 
-  <!-- menu kopi favorit -->
-  <div class="menu-section">
-    <div class="menu-header">
-      <h3><i class="fas fa-mug-hot" style="margin-right: 6px;"></i> Signature Menu & Kopi</h3>
-      <button class="btn-coffee" id="addMenuItemBtn"><i class="fas fa-plus-circle"></i> Tambah Menu</button>
+  <!-- SIDEBAR -->
+  <aside class="w-[280px] sidebar-gradient text-white hidden lg:flex flex-col">
+
+    <!-- Brand -->
+    <div class="px-8 py-7 border-b border-white/10">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-[#f7facc] text-[#63773c] flex items-center justify-center text-2xl shadow-lg">
+          <i class="fa-solid fa-mug-hot"></i>
+        </div>
+
+        <div>
+          <h1 class="text-xl font-black tracking-wide">
+            Berkesan
+          </h1>
+
+          <p class="text-sm text-white/70">
+            Coffee Dashboard
+          </p>
+        </div>
+      </div>
     </div>
-    <div class="menu-grid" id="menuGrid">
-      <!-- menu items akan dirender via JS -->
+
+    <!-- MENU -->
+    <div class="flex-1 p-5 space-y-3">
+
+      <button class="w-full menu-active rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
+        <i class="fa-solid fa-chart-line text-lg"></i>
+        <span class="font-medium">Dashboard</span>
+      </button>
+
+      <button class="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
+        <i class="fa-solid fa-cash-register text-lg"></i>
+        <span class="font-medium">Kasir</span>
+      </button>
+
+      <button class="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
+        <i class="fa-solid fa-mug-saucer text-lg"></i>
+        <span class="font-medium">Menu</span>
+      </button>
+
+      <button class="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
+        <i class="fa-solid fa-box-open text-lg"></i>
+        <span class="font-medium">Stok Barang</span>
+      </button>
+
+      <button class="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
+        <i class="fa-solid fa-receipt text-lg"></i>
+        <span class="font-medium">Laporan</span>
+      </button>
+
     </div>
-  </div>
+
+    <!-- Profile -->
+    <div class="p-5 border-t border-white/10">
+      <div class="bg-white/10 rounded-2xl p-4 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-[#f7facc] text-[#63773c] flex items-center justify-center font-bold">
+          F
+        </div>
+
+        <div class="flex-1">
+          <h3 class="font-semibold">
+            Fahmi Admin
+          </h3>
+
+          <p class="text-sm text-white/60">
+            Super Admin
+          </p>
+        </div>
+
+        <button class="text-white/70 hover:text-white">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 overflow-hidden">
+
+    <!-- TOPBAR -->
+    <header class="top-gradient px-8 py-6 text-white">
+
+      <div class="flex items-center justify-between">
+
+        <div>
+          <h2 class="text-3xl font-black">
+            Dashboard Coffee Shop
+          </h2>
+
+          <p class="text-white/70 mt-1">
+            Pantau penjualan, laba, stok, dan transaksi terbaru
+          </p>
+        </div>
+
+        <div class="hidden md:flex items-center gap-4">
+
+          <button class="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 transition">
+            <i class="fa-solid fa-bell"></i>
+          </button>
+
+          <button class="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 transition">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+
+        </div>
+
+      </div>
+
+    </header>
+
+    <!-- CONTENT -->
+    <div class="p-8">
+
+      <!-- KPI -->
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+
+        <div class="glass-card shadow-soft rounded-3xl p-6">
+          <div class="flex justify-between items-start">
+
+            <div>
+              <p class="text-sm text-[#836527] font-medium">
+                Pendapatan Hari Ini
+              </p>
+
+              <h3 class="text-3xl font-black mt-3">
+                Rp 2.4jt
+              </h3>
+
+              <p class="text-sm mt-2 text-[#63773c]">
+                +18% dari kemarin
+              </p>
+            </div>
+
+            <div class="w-14 h-14 rounded-2xl bg-[#bfc56b]/20 text-[#63773c] flex items-center justify-center text-xl">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="glass-card shadow-soft rounded-3xl p-6">
+          <div class="flex justify-between items-start">
+
+            <div>
+              <p class="text-sm text-[#836527] font-medium">
+                Total Order
+              </p>
+
+              <h3 class="text-3xl font-black mt-3">
+                154
+              </h3>
+
+              <p class="text-sm mt-2 text-[#63773c]">
+                42 takeaway
+              </p>
+            </div>
+
+            <div class="w-14 h-14 rounded-2xl bg-[#bfc56b]/20 text-[#63773c] flex items-center justify-center text-xl">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="glass-card shadow-soft rounded-3xl p-6">
+          <div class="flex justify-between items-start">
+
+            <div>
+              <p class="text-sm text-[#836527] font-medium">
+                Produk Terjual
+              </p>
+
+              <h3 class="text-3xl font-black mt-3">
+                421
+              </h3>
+
+              <p class="text-sm mt-2 text-[#63773c]">
+                Kopi & Non Kopi
+              </p>
+            </div>
+
+            <div class="w-14 h-14 rounded-2xl bg-[#bfc56b]/20 text-[#63773c] flex items-center justify-center text-xl">
+              <i class="fa-solid fa-mug-hot"></i>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="glass-card shadow-soft rounded-3xl p-6">
+          <div class="flex justify-between items-start">
+
+            <div>
+              <p class="text-sm text-[#836527] font-medium">
+                Rating Pelanggan
+              </p>
+
+              <h3 class="text-3xl font-black mt-3">
+                4.9 ★
+              </h3>
+
+              <p class="text-sm mt-2 text-[#63773c]">
+                230 review
+              </p>
+            </div>
+
+            <div class="w-14 h-14 rounded-2xl bg-[#bfc56b]/20 text-[#63773c] flex items-center justify-center text-xl">
+              <i class="fa-solid fa-star"></i>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CHART -->
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+
+        <!-- Chart -->
+        <div class="xl:col-span-2 glass-card shadow-soft rounded-3xl p-6">
+
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="text-xl font-bold">
+                Statistik Penjualan
+              </h3>
+
+              <p class="text-sm text-gray-500 mt-1">
+                Pendapatan 7 hari terakhir
+              </p>
+            </div>
+
+            <button class="bg-[#63773c] text-white px-4 py-2 rounded-xl text-sm hover:opacity-90">
+              Mingguan
+            </button>
+          </div>
+
+          <canvas id="salesChart" height="120"></canvas>
+
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="glass-card shadow-soft rounded-3xl p-6">
+
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold">
+              Pesanan Baru
+            </h3>
+
+            <button class="text-[#63773c] font-semibold text-sm">
+              Lihat Semua
+            </button>
+          </div>
+
+          <div class="space-y-4">
+
+            <div class="flex items-center gap-4 p-4 rounded-2xl bg-[#f7facc]">
+              <div class="w-12 h-12 rounded-xl bg-[#63773c] text-white flex items-center justify-center">
+                <i class="fa-solid fa-mug-hot"></i>
+              </div>
+
+              <div class="flex-1">
+                <h4 class="font-semibold">
+                  Caramel Latte
+                </h4>
+
+                <p class="text-sm text-gray-500">
+                  2 item • Cash
+                </p>
+              </div>
+
+              <span class="font-bold text-[#63773c]">
+                Rp 58k
+              </span>
+            </div>
+
+            <div class="flex items-center gap-4 p-4 rounded-2xl bg-[#f7facc]">
+              <div class="w-12 h-12 rounded-xl bg-[#836527] text-white flex items-center justify-center">
+                <i class="fa-solid fa-cookie-bite"></i>
+              </div>
+
+              <div class="flex-1">
+                <h4 class="font-semibold">
+                  Croissant
+                </h4>
+
+                <p class="text-sm text-gray-500">
+                  1 item • QRIS
+                </p>
+              </div>
+
+              <span class="font-bold text-[#836527]">
+                Rp 24k
+              </span>
+            </div>
+
+            <div class="flex items-center gap-4 p-4 rounded-2xl bg-[#f7facc]">
+              <div class="w-12 h-12 rounded-xl bg-[#050503] text-white flex items-center justify-center">
+                <i class="fa-solid fa-ice-cream"></i>
+              </div>
+
+              <div class="flex-1">
+                <h4 class="font-semibold">
+                  Matcha Blend
+                </h4>
+
+                <p class="text-sm text-gray-500">
+                  3 item • Transfer
+                </p>
+              </div>
+
+              <span class="font-bold text-[#050503]">
+                Rp 92k
+              </span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- TABLE + STOCK -->
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        <!-- Table -->
+        <div class="xl:col-span-2 glass-card shadow-soft rounded-3xl p-6 overflow-hidden">
+
+          <div class="flex items-center justify-between mb-6">
+
+            <div>
+              <h3 class="text-xl font-bold">
+                Produk Terlaris
+              </h3>
+
+              <p class="text-sm text-gray-500 mt-1">
+                Penjualan bulan ini
+              </p>
+            </div>
+
+            <button class="bg-[#63773c] text-white px-4 py-2 rounded-xl text-sm">
+              Export
+            </button>
+
+          </div>
+
+          <div class="overflow-x-auto">
+
+            <table class="w-full">
+
+              <thead>
+                <tr class="border-b border-gray-200 text-left">
+                  <th class="pb-4 text-sm text-gray-500">Produk</th>
+                  <th class="pb-4 text-sm text-gray-500">Terjual</th>
+                  <th class="pb-4 text-sm text-gray-500">Pendapatan</th>
+                  <th class="pb-4 text-sm text-gray-500">Status</th>
+                </tr>
+              </thead>
+
+              <tbody class="divide-y divide-gray-100">
+
+                <tr class="hover:bg-[#f7facc]/60 transition">
+                  <td class="py-4 font-semibold">Americano</td>
+                  <td>120 pcs</td>
+                  <td>Rp 3.2jt</td>
+                  <td>
+                    <span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">
+                      Best Seller
+                    </span>
+                  </td>
+                </tr>
+
+                <tr class="hover:bg-[#f7facc]/60 transition">
+                  <td class="py-4 font-semibold">Caramel Latte</td>
+                  <td>98 pcs</td>
+                  <td>Rp 2.8jt</td>
+                  <td>
+                    <span class="bg-[#bfc56b]/30 text-[#63773c] text-xs px-3 py-1 rounded-full font-semibold">
+                      Trending
+                    </span>
+                  </td>
+                </tr>
+
+                <tr class="hover:bg-[#f7facc]/60 transition">
+                  <td class="py-4 font-semibold">Matcha Blend</td>
+                  <td>76 pcs</td>
+                  <td>Rp 2.1jt</td>
+                  <td>
+                    <span class="bg-yellow-100 text-yellow-700 text-xs px-3 py-1 rounded-full font-semibold">
+                      Popular
+                    </span>
+                  </td>
+                </tr>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+        <!-- STOCK -->
+        <div class="glass-card shadow-soft rounded-3xl p-6">
+
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold">
+              Stok Menipis
+            </h3>
+
+            <span class="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full font-bold">
+              3
+            </span>
+          </div>
+
+          <div class="space-y-4">
+
+            <div class="flex justify-between items-center p-4 rounded-2xl bg-red-50">
+              <div>
+                <h4 class="font-semibold">
+                  Biji Arabica
+                </h4>
+
+                <p class="text-sm text-gray-500">
+                  Min. 10
+                </p>
+              </div>
+
+              <span class="text-red-700 font-black text-lg">
+                4
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center p-4 rounded-2xl bg-yellow-50">
+              <div>
+                <h4 class="font-semibold">
+                  Susu Oat
+                </h4>
+
+                <p class="text-sm text-gray-500">
+                  Min. 8
+                </p>
+              </div>
+
+              <span class="text-yellow-700 font-black text-lg">
+                6
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center p-4 rounded-2xl bg-orange-50">
+              <div>
+                <h4 class="font-semibold">
+                  Matcha Powder
+                </h4>
+
+                <p class="text-sm text-gray-500">
+                  Min. 5
+                </p>
+              </div>
+
+              <span class="text-orange-700 font-black text-lg">
+                2
+              </span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
 </div>
 
-<!-- Modal Add Menu -->
-<div id="menuModal" class="modal-mask">
-  <div class="modal-container">
-    <h3><i class="fas fa-coffee"></i> Menu Baru</h3>
-    <input type="text" id="newMenuName" placeholder="Nama menu (ex: Caramel Latte)" autocomplete="off">
-    <input type="text" id="newMenuPrice" placeholder="Harga (Rp 25.000)">
-    <div class="modal-actions">
-      <button class="btn-coffee" id="cancelModalBtn" style="background:#c9b6a2;">Batal</button>
-      <button class="btn-primary" id="saveMenuBtn">Simpan Menu</button>
-    </div>
-  </div>
-</div>
+<script>
 
-<script src="../admin/index.html"> </script>
+const ctx = document.getElementById('salesChart');
+
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+    datasets: [
+      {
+        label: 'Pendapatan',
+        data: [1200000, 1800000, 1400000, 2400000, 2200000, 2800000, 2600000],
+        borderColor: '#63773c',
+        backgroundColor: 'rgba(99,119,60,0.15)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#63773c',
+        pointRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      y: {
+        grid: {
+          color: '#e5e7eb'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    }
+  }
+});
+
+</script>
+
 </body>
 </html>

@@ -1,0 +1,27 @@
+{
+    "name": "berkesan-coffe",
+    "version": "1.0.0",
+    "description": "Berkesan Coffe is a coffee shop management system",
+    "main": "src/server.js",
+    "scripts": {
+        "start": "node src/server.js",
+        "dev": "nodemon src/server.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": ["coffe", "management"],
+    "author": "Fahmi & Bintang. dkk",
+    "license": "MIT",
+    "dependencies": {
+        "express": "5.2.1",
+        "cors": "2.8.6",
+        "dotenv": "17.4.2",
+        "mysql2": "3.22.3",
+        "bcrypt": "5.1.0",
+        "jsonwebtoken": "9.0.0",
+        "body-parser": "1.20.2",
+        "validator": "13.9.0"
+    },
+    "devDependencies": {
+        "nodemon": "3.1.14"
+    }
+}

@@ -1,38 +1,549 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Berkesan Coffee | Pesan 10 Menu Minuman</title>
-    <link rel="stylesheet" href="../assets/css/order.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Berkesan Coffee | Menu</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <style>
+    body{
+      font-family: 'Inter', sans-serif;
+      background: #050503;
+    }
+
+    @keyframes blob {
+      0%,100%{
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+      }
+      50%{
+        border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+      }
+    }
+
+    @keyframes fadeUp {
+      from{
+        opacity:0;
+        transform:translateY(20px);
+      }
+      to{
+        opacity:1;
+        transform:translateY(0);
+      }
+    }
+
+    .blob{
+      animation: blob 10s ease-in-out infinite;
+    }
+
+    .fade-up{
+      animation: fadeUp .5s ease both;
+    }
+
+    .glass{
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .coffee-gradient{
+      background: linear-gradient(
+        135deg,
+        #63773c 0%,
+        #836527 100%
+      );
+    }
+
+    .menu-card:hover{
+      transform: translateY(-5px);
+    }
+
+    ::-webkit-scrollbar{
+      display:none;
+    }
+
+    *{
+      scrollbar-width:none;
+    }
+  </style>
 </head>
-<body>
-<div class="berkesan-container">
-    <div class="cafe-header">
-        <h1>berkesan coffee</h1>
-        <p>✦ 10 aroma autentik | pesan & nikmati ✦</p>
-    </div>
 
-    <div class="menu-grid" id="menuGrid">
-        <!-- 10 menu minuman akan di-generate dengan javascript agar dinamis dan mudah -->
-    </div>
+<body class="min-h-screen text-[#f7facc] overflow-x-hidden">
 
-    <!-- total pembayaran global -->
-    <div class="global-total-bar">
-        <div class="global-label">
-            🧾 TOTAL SELURUH PEMBELIAN
-        </div>
-        <div class="grand-total" id="grandTotalDisplay">Rp 0</div>
-        <div class="action-buttons">
-            <button class="btn-primary" id="checkoutBtn">✔️ Pesanan Sekarang</button>
-            <button class="btn-secondary" id="resetAllBtn">⟳ Reset Semua</button>
-        </div>
-    </div>
-    <div class="notif-area" id="globalNotif">
-        ☕ Selamat datang! Pilih jumlah setiap menu favorit di Berkesan Coffee.
-    </div>
+<!-- BACKGROUND -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+
+  <div class="blob absolute -top-32 -left-32 w-[420px] h-[420px] bg-[#63773c] opacity-20 blur-3xl"></div>
+
+  <div class="blob absolute bottom-[-120px] right-[-100px] w-[420px] h-[420px] bg-[#836527] opacity-20 blur-3xl"></div>
+
+  <div class="blob absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] bg-[#bfc56b] opacity-10 blur-3xl"></div>
+
 </div>
 
-<script src="../assets/js/order.js"></script>
+<!-- HEADER -->
+<header class="sticky top-0 z-40 border-b border-white/5 backdrop-blur-xl bg-[#050503]/70">
+
+  <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
+
+    <!-- BRAND -->
+    <div class="flex items-center gap-4">
+
+      <div class="w-14 h-14 rounded-2xl coffee-gradient flex items-center justify-center shadow-xl">
+        <i class="fa-solid fa-mug-hot text-white text-xl"></i>
+      </div>
+
+      <div>
+        <h1 class="text-2xl font-black tracking-wide">
+          Berkesan Coffee
+        </h1>
+
+        <p class="text-sm text-[#f7facc]/50">
+          18 aroma autentik ✦ pesan & nikmati
+        </p>
+      </div>
+
+    </div>
+
+    <!-- CART -->
+    <button
+      id="cartButton"
+      class="relative coffee-gradient px-5 py-3 rounded-2xl font-bold shadow-xl hover:scale-[1.02] transition"
+    >
+
+      <div class="flex items-center gap-3">
+
+        <i class="fa-solid fa-cart-shopping"></i>
+
+        <span class="hidden sm:block">
+          Keranjang
+        </span>
+
+      </div>
+
+      <div
+        id="cartCount"
+        class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#f7facc] text-[#050503] text-xs font-black flex items-center justify-center"
+      >
+        0
+      </div>
+
+    </button>
+
+  </div>
+
+</header>
+
+<!-- CATEGORY -->
+<section class="sticky top-[86px] z-30 bg-[#050503]/80 backdrop-blur-xl border-b border-white/5">
+
+  <div class="max-w-7xl mx-auto px-5 py-4 overflow-x-auto">
+
+    <div class="flex gap-3 w-max">
+
+      <button class="bg-[#63773c] text-[#f7facc] px-5 py-2 rounded-full font-semibold text-sm">
+        Semua
+      </button>
+
+      <button class="glass px-5 py-2 rounded-full font-semibold text-sm text-[#f7facc]/70 hover:text-white transition">
+        Coffee
+      </button>
+
+      <button class="glass px-5 py-2 rounded-full font-semibold text-sm text-[#f7facc]/70 hover:text-white transition">
+        Non Coffee
+      </button>
+
+      <button class="glass px-5 py-2 rounded-full font-semibold text-sm text-[#f7facc]/70 hover:text-white transition">
+        Dessert
+      </button>
+
+      <button class="glass px-5 py-2 rounded-full font-semibold text-sm text-[#f7facc]/70 hover:text-white transition">
+        Signature
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- CONTENT -->
+<main class="max-w-7xl mx-auto px-5 py-8 pb-40">
+
+  <!-- TITLE -->
+  <div class="mb-8 fade-up">
+
+    <h2 class="text-4xl font-black mb-3">
+      Pilih Menu Favorit ☕
+    </h2>
+
+    <p class="text-[#f7facc]/50 max-w-2xl">
+      Nikmati berbagai pilihan kopi premium, non coffee,
+      dan dessert spesial khas Berkesan Coffee.
+    </p>
+
+  </div>
+
+  <!-- GRID -->
+  <div
+    id="menuGrid"
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+  >
+
+    <!-- CARD -->
+    <div class="menu-card glass rounded-[28px] overflow-hidden transition duration-300 shadow-2xl">
+
+      <!-- IMAGE -->
+      <div class="h-52 coffee-gradient flex items-center justify-center relative overflow-hidden">
+
+        <div class="absolute inset-0 bg-black/10"></div>
+
+        <span class="text-[90px] relative z-10">
+          ☕
+        </span>
+
+        <div class="absolute top-4 left-4 bg-[#f7facc]/15 backdrop-blur px-3 py-1 rounded-full text-xs font-bold">
+          Best Seller
+        </div>
+
+      </div>
+
+      <!-- CONTENT -->
+      <div class="p-5">
+
+        <div class="flex items-start justify-between gap-4">
+
+          <div>
+            <h3 class="text-xl font-black">
+              Caramel Latte
+            </h3>
+
+            <p class="text-sm text-[#f7facc]/50 mt-1">
+              Espresso, caramel syrup & creamy milk
+            </p>
+          </div>
+
+          <div class="text-2xl">
+            ☕
+          </div>
+
+        </div>
+
+        <!-- PRICE -->
+        <div class="mt-5 flex items-center justify-between">
+
+          <div>
+            <p class="text-xs text-[#f7facc]/40">
+              Harga
+            </p>
+
+            <h4 class="text-2xl font-black text-[#bfc56b]">
+              Rp 28K
+            </h4>
+          </div>
+
+          <button
+            class="w-14 h-14 rounded-2xl coffee-gradient flex items-center justify-center shadow-lg hover:scale-105 transition"
+          >
+            <i class="fa-solid fa-plus text-white"></i>
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- CARD -->
+    <div class="menu-card glass rounded-[28px] overflow-hidden transition duration-300 shadow-2xl">
+
+      <div class="h-52 bg-[#63773c] flex items-center justify-center relative overflow-hidden">
+
+        <span class="text-[90px]">
+          🧋
+        </span>
+
+        <div class="absolute top-4 left-4 bg-[#f7facc]/15 backdrop-blur px-3 py-1 rounded-full text-xs font-bold">
+          New
+        </div>
+
+      </div>
+
+      <div class="p-5">
+
+        <div class="flex items-start justify-between gap-4">
+
+          <div>
+            <h3 class="text-xl font-black">
+              Matcha Blend
+            </h3>
+
+            <p class="text-sm text-[#f7facc]/50 mt-1">
+              Premium japanese matcha with milk
+            </p>
+          </div>
+
+          <div class="text-2xl">
+            🍵
+          </div>
+
+        </div>
+
+        <div class="mt-5 flex items-center justify-between">
+
+          <div>
+            <p class="text-xs text-[#f7facc]/40">
+              Harga
+            </p>
+
+            <h4 class="text-2xl font-black text-[#bfc56b]">
+              Rp 32K
+            </h4>
+          </div>
+
+          <button
+            class="w-14 h-14 rounded-2xl coffee-gradient flex items-center justify-center shadow-lg hover:scale-105 transition"
+          >
+            <i class="fa-solid fa-plus text-white"></i>
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- CARD -->
+    <div class="menu-card glass rounded-[28px] overflow-hidden transition duration-300 shadow-2xl">
+
+      <div class="h-52 bg-[#836527] flex items-center justify-center relative overflow-hidden">
+
+        <span class="text-[90px]">
+          🥐
+        </span>
+
+      </div>
+
+      <div class="p-5">
+
+        <div class="flex items-start justify-between gap-4">
+
+          <div>
+            <h3 class="text-xl font-black">
+              Butter Croissant
+            </h3>
+
+            <p class="text-sm text-[#f7facc]/50 mt-1">
+              Fresh baked buttery croissant
+            </p>
+          </div>
+
+          <div class="text-2xl">
+            🥐
+          </div>
+
+        </div>
+
+        <div class="mt-5 flex items-center justify-between">
+
+          <div>
+            <p class="text-xs text-[#f7facc]/40">
+              Harga
+            </p>
+
+            <h4 class="text-2xl font-black text-[#bfc56b]">
+              Rp 22K
+            </h4>
+          </div>
+
+          <button
+            class="w-14 h-14 rounded-2xl coffee-gradient flex items-center justify-center shadow-lg hover:scale-105 transition"
+          >
+            <i class="fa-solid fa-plus text-white"></i>
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- CARD -->
+    <div class="menu-card glass rounded-[28px] overflow-hidden transition duration-300 shadow-2xl">
+
+      <div class="h-52 bg-[#bfc56b] flex items-center justify-center relative overflow-hidden">
+
+        <span class="text-[90px]">
+          🥤
+        </span>
+
+      </div>
+
+      <div class="p-5">
+
+        <div class="flex items-start justify-between gap-4">
+
+          <div>
+            <h3 class="text-xl font-black text-[#f7facc]">
+              Vanilla Frappe
+            </h3>
+
+            <p class="text-sm text-[#f7facc]/50 mt-1">
+              Ice blended vanilla cream frappe
+            </p>
+          </div>
+
+          <div class="text-2xl">
+            ❄️
+          </div>
+
+        </div>
+
+        <div class="mt-5 flex items-center justify-between">
+
+          <div>
+            <p class="text-xs text-[#f7facc]/40">
+              Harga
+            </p>
+
+            <h4 class="text-2xl font-black text-[#f7facc]">
+              Rp 30K
+            </h4>
+          </div>
+
+          <button
+            class="w-14 h-14 rounded-2xl bg-[#050503] flex items-center justify-center shadow-lg hover:scale-105 transition"
+          >
+            <i class="fa-solid fa-plus text-white"></i>
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<!-- FLOATING CART -->
+<div
+  class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-2xl"
+>
+
+  <div class="glass rounded-[30px] border border-white/10 shadow-[0_10px_50px_rgba(0,0,0,0.4)] p-4">
+
+    <div class="flex items-center justify-between gap-4">
+
+      <div class="flex items-center gap-4">
+
+        <div class="w-16 h-16 rounded-2xl coffee-gradient flex items-center justify-center shadow-lg">
+          <i class="fa-solid fa-cart-shopping text-white text-xl"></i>
+        </div>
+
+        <div>
+
+          <p class="text-sm text-[#f7facc]/50">
+            Total Pembayaran
+          </p>
+
+          <h3
+            id="grandTotalDisplay"
+            class="text-3xl font-black"
+          >
+            Rp 0
+          </h3>
+
+        </div>
+
+      </div>
+
+      <!-- BUTTON -->
+      <div class="flex items-center gap-3">
+
+        <button
+          class="hidden sm:flex px-5 py-4 rounded-2xl border border-white/10 text-[#f7facc]/70 hover:bg-white/5 transition font-semibold"
+        >
+          Reset
+        </button>
+
+        <button
+          id="checkoutBtn"
+          class="coffee-gradient px-6 py-4 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition"
+        >
+          Pesan Sekarang →
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- NOTIFICATION -->
+<div
+  class="fixed top-24 right-5 z-50 glass rounded-2xl px-5 py-4 shadow-2xl border border-white/10 max-w-sm"
+>
+
+  <div class="flex items-start gap-3">
+
+    <div class="w-10 h-10 rounded-xl bg-[#63773c] flex items-center justify-center flex-shrink-0">
+      ☕
+    </div>
+
+    <div>
+
+      <h4 class="font-bold">
+        Selamat Datang
+      </h4>
+
+      <p class="text-sm text-[#f7facc]/60 mt-1">
+        Pilih menu favorit dan nikmati kopi premium Berkesan Coffee.
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+const cartCount = document.getElementById('cartCount');
+const totalDisplay = document.getElementById('grandTotalDisplay');
+
+let totalItem = 0;
+let totalHarga = 0;
+
+document.querySelectorAll('.menu-card button').forEach(btn => {
+
+  btn.addEventListener('click', () => {
+
+    totalItem++;
+    totalHarga += 28000;
+
+    cartCount.innerText = totalItem;
+    totalDisplay.innerText =
+      'Rp ' + totalHarga.toLocaleString('id-ID');
+
+  });
+
+});
+
+</script>
+
 </body>
 </html>
