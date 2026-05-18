@@ -1,4 +1,4 @@
-const db = require("../config/db");
+const db = require("../app/config/database");
 
 const bcrypt = require("bcryptjs");
 
@@ -19,7 +19,7 @@ exports.login = async (req, res) => {
     // CEK USER
     const [rows] = await db.query(
       "SELECT * FROM users WHERE username = ? LIMIT 1",
-      [username]
+      [username],
     );
 
     // USER TIDAK DITEMUKAN
@@ -33,10 +33,7 @@ exports.login = async (req, res) => {
     const user = rows[0];
 
     // CEK PASSWORD
-    const isMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isMatch = await bcrypt.compare(password, user.password);
 
     // PASSWORD SALAH
     if (!isMatch) {
@@ -58,7 +55,7 @@ exports.login = async (req, res) => {
 
       {
         expiresIn: "1d",
-      }
+      },
     );
 
     // RESPONSE
