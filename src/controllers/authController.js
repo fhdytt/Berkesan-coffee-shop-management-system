@@ -1,91 +1,85 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const pool = require('../config/database');
+const db = require("../config/db");
 
-exports.register = async (req, res) => {
-  try {
-    const { email, password, name, phone } = req.body;
+const bcrypt = require("bcryptjs");
 
-    // Validation
-    if (!email || !password || !name) {
-      return res.status(400).json({ error: 'Email, password, and name required' });
-    }
-
-    // Check if user exists
-    const [existingUser] = await pool.query(
-      'SELECT id FROM users WHERE email = ?',
-      [email]
-    );
-
-    if (existingUser.length > 0) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    const [result] = await pool.query(
-      'INSERT INTO users (email, password, name, phone, role) VALUES (?, ?, ?, ?, ?)',
-      [email, hashedPassword, name, phone || null, 'customer']
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      user: { id: result.insertId, email, name }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+const jwt = require("jsonwebtoken");
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
+    // VALIDASI INPUT
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Username dan password wajib diisi",
+      });
     }
 
-    // Find user
-    const [users] = await pool.query(
-      'SELECT * FROM users WHERE email = ?',
-      [email]
+    // CEK USER
+    const [rows] = await db.query(
+      "SELECT * FROM users WHERE username = ? LIMIT 1",
+      [username]
     );
 
-    if (users.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    // USER TIDAK DITEMUKAN
+    if (rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: "Username tidak ditemukan",
+      });
     }
 
-    const user = users[0];
+    const user = rows[0];
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    // CEK PASSWORD
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    // PASSWORD SALAH
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: "Password salah",
+      });
     }
 
-    // Generate JWT token
+    // GENERATE JWT TOKEN
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secret_key',
-      { expiresIn: '24h' }
+      {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
+
+      process.env.JWT_SECRET,
+
+      {
+        expiresIn: "1d",
+      }
     );
 
-    res.json({
+    // RESPONSE
+    return res.json({
       success: true,
-      message: 'Login successful',
+
       token,
+
       user: {
         id: user.id,
-        email: user.email,
+        username: user.username,
         name: user.name,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
   }
 };
