@@ -1,91 +1,114 @@
-const pool = require('../config/database');
+const db = require("../config/database");
 
-exports.getAll = async (req, res) => {
+exports.getMenus = async (req, res) => {
   try {
-    const [menus] = await pool.query(
-      'SELECT * FROM menu_items WHERE is_available = true ORDER BY created_at DESC'
-    );
-    res.json({ success: true, data: menus });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    const [items] = await db.query(`
+      SELECT
+        m.id,
+        m.kategori_id,
+        k.name AS kategori_name,
+        m.name,
+        m.price,
+        m.image_url,
+        m.stock,
+        m.is_available,
+        m.created_at,
+        m.updated_at
+      FROM menu_items m
+      LEFT JOIN kategori k ON k.id = m.kategori_id
+      WHERE m.is_available = TRUE
+      ORDER BY k.name ASC, m.name ASC
+    `);
 
-exports.getById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [menus] = await pool.query(
-      'SELECT * FROM menu_items WHERE id = ?',
-      [id]
-    );
-
-    if (menus.length === 0) {
-      return res.status(404).json({ error: 'Menu not found' });
-    }
-
-    res.json({ success: true, data: menus[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-exports.create = async (req, res) => {
-  try {
-    const { name, price, description, category } = req.body;
-
-    if (!name || !price) {
-      return res.status(400).json({ error: 'Name and price required' });
-    }
-
-    const [result] = await pool.query(
-      'INSERT INTO menu_items (name, price, description, category, is_available) VALUES (?, ?, ?, ?, true)',
-      [name, price, description || null, category || 'Other']
-    );
-
-    res.status(201).json({
+    res.json({
       success: true,
-      message: 'Menu created',
-      data: { id: result.insertId, name, price }
+      message: "Semua menu",
+      data: { items },
+      items,
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
-exports.update = async (req, res) => {
+exports.createMenu = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, price, description, category, is_available } = req.body;
+    const { name, kategori_id, price, stock = 0, is_available = true, image_url = null } = req.body;
 
-    const [result] = await pool.query(
-      'UPDATE menu_items SET name = ?, price = ?, description = ?, category = ?, is_available = ? WHERE id = ?',
-      [name, price, description, category, is_available, id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Menu not found' });
+    if (!name || !kategori_id || price === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama, kategori, dan harga wajib diisi",
+      });
     }
 
-    res.json({ success: true, message: 'Menu updated' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const [result] = await db.query(
+      `INSERT INTO menu_items (kategori_id, name, price, stock, is_available, image_url)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [kategori_id, name, price, stock, !!is_available, image_url || null]
+    );
+
+    res.json({
+      success: true,
+      message: "Menu berhasil dibuat",
+      data: { id: result.insertId },
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
-exports.delete = async (req, res) => {
+exports.updateMenu = async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await pool.query(
-      'DELETE FROM menu_items WHERE id = ?',
-      [id]
-    );
+    const { name, kategori_id, price, stock = 0, is_available = true, image_url = null } = req.body;
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Menu not found' });
+    if (!name || !kategori_id || price === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama, kategori, dan harga wajib diisi",
+      });
     }
 
-    res.json({ success: true, message: 'Menu deleted' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    await db.query(
+      `UPDATE menu_items
+       SET kategori_id = ?, name = ?, price = ?, stock = ?, is_available = ?, image_url = ?
+       WHERE id = ?`,
+      [kategori_id, name, price, stock, !!is_available, image_url || null, id]
+    );
+
+    res.json({ success: true, message: "Menu berhasil diperbarui" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteMenu = async (req, res) => {
+  try {
+    const [[usage]] = await db.query(
+      "SELECT COUNT(*) AS total FROM order_items WHERE menu_item_id = ?",
+      [req.params.id]
+    );
+
+    if (Number(usage.total) > 0) {
+      await db.query(
+        "UPDATE menu_items SET is_available = FALSE, stock = 0 WHERE id = ?",
+        [req.params.id]
+      );
+      return res.json({
+        success: true,
+        message: "Menu sudah pernah masuk transaksi, jadi dinonaktifkan",
+      });
+    }
+    await db.query("DELETE FROM menu_items WHERE id = ?", [req.params.id]);
+    res.json({ success: true, message: "Menu berhasil dihapus" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

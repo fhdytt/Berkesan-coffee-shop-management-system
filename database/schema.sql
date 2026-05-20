@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS kategori (
     id          INT AUTO_INCREMENT PRIMARY KEY,
-    name        VARCHAR(100) NOT NULL,
+    name        VARCHAR(100) UNIQUE NOT NULL,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
     kategori_id     INT NOT NULL,
     name            VARCHAR(150) NOT NULL,
     price           DECIMAL(10, 2) NOT NULL,
-    image_url       VARCHAR(255),
+    image_url       LONGTEXT,
     stock INT NOT NULL DEFAULT 0,
     is_available    BOOLEAN NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -30,10 +30,10 @@ CREATE TABLE IF NOT EXISTS menu_items (
     CONSTRAINT fk_menu_kategori FOREIGN KEY (kategori_id) REFERENCES kategori(id)
 );
 
-CREATE TABLE tables (
+CREATE TABLE IF NOT EXISTS tables (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     table_number    VARCHAR(20) UNIQUE NOT NULL,
-    qr_code         VARCHAR(255),
+    qr_code         LONGTEXT,
     is_active       BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS orders (
     id                  INT AUTO_INCREMENT PRIMARY KEY,
     order_code          VARCHAR(50) UNIQUE NOT NULL,
     user_id             INT DEFAULT NULL,
+    table_id            INT DEFAULT NULL,
     customer_name       VARCHAR(150),
     total_price         DECIMAL(12,2) NOT NULL DEFAULT 0,
     payment_method      ENUM('cash','qris') NOT NULL,
@@ -54,7 +55,10 @@ CREATE TABLE IF NOT EXISTS orders (
     CONSTRAINT fk_order_user
     FOREIGN KEY (user_id)
     REFERENCES users(id)
-    ON DELETE SET NULL
+    ON DELETE SET NULL,
+    CONSTRAINT fk_order_table
+    FOREIGN KEY (table_id)
+    REFERENCES tables(id)
 );
 
 CREATE TABLE IF NOT EXISTS order_items (

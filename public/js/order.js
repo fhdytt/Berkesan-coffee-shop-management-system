@@ -1,287 +1,407 @@
-// ================================
-    // Daftar 10 MENU MINUMAN (dengan gambar unik, harga)
-    // Setiap menu punya gambar ilustrasi (saya sediakan icon coffee style via placeholder)
-    // Untuk memenuhi "foto yang sudah saya kirim", saya menyematkan gambar minuman yang mirip asli (premium)
-    // ================================
-    const MENU_ITEMS = [
-        { id: 0, name: "Waktu 👍 ", price: 20000, img: "https://placehold.co/300x300/E6D5B8/5C3E1F?text=☕+Berkesan+Latte&font=playfair" },
-        { id: 1, name: "Jumpa", price: 20000, img: "https://placehold.co/300x300/F2E0C9/B45F2B?text=🍯+Caramel+Macchiato&font=playfair" },
-        { id: 2, name: "Dia 👍", price: 20000, img: "https://placehold.co/300x300/EFDABF/A45D2A?text=🌰+Vanilla+Hazelnut&font=playfair" },
-        { id: 3, name: "Creamy Berries", price: 22000, img: "https://placehold.co/300x300/EAD0AF/6B3E1C?text=🍫+Mocha+Velvet&font=playfair" },
-        { id: 4, name: "Cappucino / Cafe Latte", price: 23000, img: "https://placehold.co/300x300/F2E5D4/9B5E2E?text=🥥+Gula+Aren+Coconut&font=playfair" },
-        { id: 5, name: "Huzelnut Latte", price: 20000, img: "https://placehold.co/300x300/EEDBBC/784A24?text=🥃+Espresso+Rum&font=playfair" },
-        { id: 6, name: "Creamy Latte", price: 18000, img: "https://placehold.co/300x300/DAE3C5/48632E?text=🍵+Matcha+Cream&font=playfair" },
-        { id: 7, name: "Americano", price: 18000, img: "https://placehold.co/300x300/F6E1C8/AF5F29?text=🧈+Butterscotch&font=playfair" },
-        { id: 8, name: "Fizz Me Up", price: 22000, img: "https://placehold.co/300x300/D8E2F0/33507A?text=🌸+Blue+Pea&font=playfair" },
-        { id: 9, name: "Sunset Brew", price: 22000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-        { id: 10, name: "Chocolate", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-         { id: 10, name: "Red Velvet", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-          { id: 10, name: "Matcha", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-           { id: 10, name: "Vanilla Crumbs", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-            { id: 10, name: "Lemon Tea", price: 15000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-             { id: 10, name: "Lychee Tea", price: 15000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-              { id: 10, name: "Tea", price: 10000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-               { id: 10, name: "V60", price: 20000, img: "https://placehold.co/300x300/EFD1B5/8A4621?text=🍨+Affogato&font=playfair" },
-               
-    ];
+const rupiah = (v) => "Rp " + (Number(v) || 0).toLocaleString("id-ID");
 
-    // State untuk menyimpan jumlah masing-masing menu (default 0)
-    let quantities = new Array(18).fill(0);
+const params = new URLSearchParams(window.location.search);
+let tableNumber =
+  params.get("table") ||
+  params.get("meja") ||
+  params.get("table_number") ||
+  localStorage.getItem("berkesan_table") ||
+  "";
+let menus = [];
+let cart = {};
+let selectedPayment = "qris";
 
-    // Helper: format Rupiah
-    function formatRupiah(amount) {
-        return "Rp " + new Intl.NumberFormat('id-ID').format(amount);
+// State order aktif
+let currentOrder = null;
+let currentPaymentCode = null;
+let currentOrderItems = [];
+
+// ─── Helpers ──────────────────────────────────────────────────
+
+function normalizeCategory(v) {
+  return (v || "Lainnya").toString().trim();
+}
+
+function setTable(value) {
+  tableNumber = value.trim();
+  if (tableNumber) localStorage.setItem("berkesan_table", tableNumber);
+  document.getElementById("tableLabel").textContent = tableNumber
+    ? `Meja ${tableNumber}`
+    : "Meja belum dipilih";
+  document.getElementById("tableNotice").classList.toggle("hidden", !!tableNumber);
+}
+
+async function apiJson(url, options = {}) {
+  const res = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+  const json = await res.json();
+  if (!res.ok || !json.success)
+    throw new Error(json.message || json.error || "Request gagal");
+  return json.data || json;
+}
+
+// ─── Menu ─────────────────────────────────────────────────────
+
+async function loadMenus() {
+  const grid = document.getElementById("menuGrid");
+  grid.innerHTML =
+    '<div class="card rounded-xl p-6 col-span-full text-center text-[#66705e]">Memuat menu...</div>';
+  try {
+    const data = await apiJson("/api/menu");
+    menus = data.items || [];
+    buildCategories();
+    renderMenus("all");
+  } catch (err) {
+    grid.innerHTML = `<div class="card rounded-xl p-6 col-span-full text-center text-red-700">Gagal memuat menu: ${err.message}</div>`;
+  }
+}
+
+function buildCategories() {
+  const tabs = document.getElementById("categoryTabs");
+  const cats = [...new Set(menus.map((m) => normalizeCategory(m.kategori_name)))];
+  tabs.innerHTML =
+    '<button data-filter="all" class="filter-btn brand px-4 py-2 rounded-xl text-sm font-bold">Semua</button>' +
+    cats
+      .map(
+        (c) =>
+          `<button data-filter="${c}" class="filter-btn bg-white px-4 py-2 rounded-xl text-sm font-bold text-[#3f5f35] border border-[#3f5f35]/15">${c}</button>`,
+      )
+      .join("");
+  tabs.querySelectorAll(".filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabs.querySelectorAll(".filter-btn").forEach((b) => {
+        b.className =
+          "filter-btn bg-white px-4 py-2 rounded-xl text-sm font-bold text-[#3f5f35] border border-[#3f5f35]/15";
+      });
+      btn.className = "filter-btn brand px-4 py-2 rounded-xl text-sm font-bold";
+      renderMenus(btn.dataset.filter);
+    });
+  });
+}
+
+function renderMenus(filter) {
+  const grid = document.getElementById("menuGrid");
+  const visible =
+    filter === "all"
+      ? menus
+      : menus.filter((m) => normalizeCategory(m.kategori_name) === filter);
+  document.getElementById("emptyMenu").classList.toggle("hidden", visible.length > 0);
+  grid.innerHTML = visible
+    .map((item) => {
+      const qty = cart[item.id]?.quantity || 0;
+      const img = item.image_url
+        ? `<img src="${item.image_url}" alt="${item.name}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center text-4xl text-[#3f5f35]\\'><i class=\\'fa-solid fa-mug-hot\\'></i></div>'">`
+        : `<div class="w-full h-full flex items-center justify-center text-4xl text-[#3f5f35]"><i class="fa-solid fa-mug-hot"></i></div>`;
+      return `
+      <article class="card rounded-xl overflow-hidden">
+        <div class="menu-img">${img}</div>
+        <div class="p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs font-bold text-[#836527]">${normalizeCategory(item.kategori_name)}</p>
+              <h3 class="font-black text-lg mt-1">${item.name}</h3>
+              <p class="text-xs text-[#66705e] mt-1">Stok ${item.stock}</p>
+            </div>
+            <p class="font-black text-[#3f5f35]">${rupiah(item.price)}</p>
+          </div>
+          <div class="mt-4 flex items-center justify-between">
+            <button class="w-10 h-10 rounded-xl bg-[#ece7d8] font-black" onclick="changeQty(${item.id}, -1)">-</button>
+            <span id="qty-${item.id}" class="font-black text-lg">${qty}</span>
+            <button class="w-10 h-10 rounded-xl brand font-black" onclick="changeQty(${item.id}, 1)">+</button>
+          </div>
+        </div>
+      </article>`;
+    })
+    .join("");
+}
+
+function changeQty(id, delta) {
+  const menu = menus.find((m) => m.id === id);
+  if (!menu) return;
+  const current = cart[id]?.quantity || 0;
+  const next = Math.max(0, Math.min(Number(menu.stock), current + delta));
+  if (next === 0) delete cart[id];
+  else
+    cart[id] = {
+      menu_item_id: id,
+      name: menu.name,
+      price: Number(menu.price),
+      quantity: next,
+    };
+  const el = document.getElementById("qty-" + id);
+  if (el) el.textContent = next;
+  updateCart();
+}
+
+function updateCart() {
+  const items = Object.values(cart);
+  const count = items.reduce((s, i) => s + i.quantity, 0);
+  const total = items.reduce((s, i) => s + i.quantity * i.price, 0);
+  document.getElementById("cartCount").textContent = count;
+  document.getElementById("grandTotalDisplay").textContent = rupiah(total);
+}
+
+// ─── Modal 1: Checkout ────────────────────────────────────────
+
+function openCheckout() {
+  const items = Object.values(cart);
+  if (!items.length) return alert("Silakan pilih menu terlebih dahulu.");
+  if (!tableNumber) {
+    document
+      .getElementById("tableNotice")
+      .scrollIntoView({ behavior: "smooth", block: "center" });
+    return alert("Nomor meja wajib diisi sebelum checkout.");
+  }
+  const total = items.reduce((s, i) => s + i.quantity * i.price, 0);
+  document.getElementById("checkoutTableText").textContent = `Meja ${tableNumber}`;
+  document.getElementById("checkoutTotal").textContent = rupiah(total);
+  document.getElementById("checkoutItems").innerHTML = items
+    .map(
+      (item) => `
+    <div class="flex justify-between gap-3 bg-white rounded-xl p-3 border border-[#3f5f35]/10">
+      <div>
+        <p class="font-bold">${item.name}</p>
+        <p class="text-xs text-[#66705e]">${item.quantity} x ${rupiah(item.price)}</p>
+      </div>
+      <p class="font-black">${rupiah(item.quantity * item.price)}</p>
+    </div>`,
+    )
+    .join("");
+  document.getElementById("checkoutModal").classList.add("open");
+}
+
+function closeCheckout() {
+  document.getElementById("checkoutModal").classList.remove("open");
+}
+
+// ─── Submit order ─────────────────────────────────────────────
+
+async function submitOrder() {
+  const btn = document.getElementById("submitOrderBtn");
+  btn.disabled = true;
+  btn.textContent = "Membuat pesanan...";
+  try {
+    const payload = {
+      table_number: tableNumber,
+      customer_name:
+        document.getElementById("customerName").value.trim() || `Meja ${tableNumber}`,
+      payment_method: selectedPayment,
+      notes: document.getElementById("orderNotes").value.trim(),
+      items: Object.values(cart).map((item) => ({
+        menu_item_id: item.menu_item_id,
+        quantity: item.quantity,
+      })),
+    };
+
+    const data = await apiJson("/api/order", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    currentOrder = data.order;
+    currentPaymentCode = data.payment_code;
+    currentOrderItems = Object.values(cart);
+
+    closeCheckout();
+
+    if (selectedPayment === "qris") {
+      openQrisModal();
+    } else {
+      // Cash: langsung tampil kode order
+      showOrderCode();
     }
 
-    // Hitung total seluruh pembelian
-    function calculateGrandTotal() {
-        let total = 0;
-        for (let i = 0; i < MENU_ITEMS.length; i++) {
-            total += MENU_ITEMS[i].price * quantities[i];
-        }
-        return total;
-    }
+    // Reset cart
+    cart = {};
+    renderMenus(
+      document.querySelector("#categoryTabs .brand")?.dataset.filter || "all",
+    );
+    updateCart();
+  } catch (err) {
+    alert("Gagal membuat pesanan: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Buat Pesanan";
+  }
+}
 
-    // Update tampilan total global & per-item total pada card
-    function updateAllTotals() {
-        const grandTotal = calculateGrandTotal();
-        const grandElem = document.getElementById('grandTotalDisplay');
-        if (grandElem) grandElem.innerText = formatRupiah(grandTotal);
-        
-        // update setiap item total (subtotal per menu)
-        for (let i = 0; i < MENU_ITEMS.length; i++) {
-            const subTotalSpan = document.getElementById(`itemTotal-${i}`);
-            if (subTotalSpan) {
-                const subTotal = MENU_ITEMS[i].price * quantities[i];
-                subTotalSpan.innerText = formatRupiah(subTotal);
-            }
-            // update tampilan input jika perlu sinkron
-            const qtyInput = document.getElementById(`qty-${i}`);
-            if (qtyInput && parseInt(qtyInput.value, 10) !== quantities[i]) {
-                qtyInput.value = quantities[i];
-            }
-        }
-        
-        // sedikit notifikasi perubahan total (opsional)
-        const notifDiv = document.getElementById('globalNotif');
-        if (grandTotal > 0) {
-            notifDiv.innerHTML = `🛒 Total belanja Anda: ${formatRupiah(grandTotal)} | Pilih kembali menu favorit ✨`;
-        } else {
-            notifDiv.innerHTML = `☕ Belum ada pesanan. Atur jumlah minuman di atas, ya!`;
-        }
-    }
+// ─── Modal 2: QRIS ────────────────────────────────────────────
 
-    // Fungsi ubah jumlah untuk masing-masing menu
-    function changeQuantity(index, delta) {
-        let newVal = quantities[index] + delta;
-        if (newVal < 0) newVal = 0;
-        if (newVal > 99) newVal = 99;
-        if (newVal !== quantities[index]) {
-            quantities[index] = newVal;
-            updateAllTotals();
-            // update input field secara langsung
-            const inputField = document.getElementById(`qty-${index}`);
-            if (inputField) inputField.value = newVal;
-            // feedback singkat di notifikasi (tapi tidak terlalu mengganggu)
-            const menuName = MENU_ITEMS[index].name;
-            const notifDiv = document.getElementById('globalNotif');
-            if (newVal > 0) {
-                notifDiv.innerHTML = `🍹 ${menuName} : ${newVal} cup · subtotal ${formatRupiah(MENU_ITEMS[index].price * newVal)}`;
-                setTimeout(() => {
-                    const grand = calculateGrandTotal();
-                    if (grand > 0) notifDiv.innerHTML = `🛒 Total: ${formatRupiah(grand)} | Lanjutkan pesanan`;
-                    else notifDiv.innerHTML = `☕ Kembali ke beranda menu. Atur jumlah minuman!`;
-                }, 1800);
-            } else {
-                notifDiv.innerHTML = `🗑️ ${menuName} dihapus dari pesanan`;
-                setTimeout(() => {
-                    const grandNow = calculateGrandTotal();
-                    if (grandNow > 0) notifDiv.innerHTML = `🛒 Total sementara: ${formatRupiah(grandNow)}`;
-                    else notifDiv.innerHTML = `☕ Belum ada pesanan. Pilih menu kesukaan!`;
-                }, 1500);
-            }
-        }
-    }
+function openQrisModal() {
+  const total = currentOrder?.total_price || 0;
+  document.getElementById("qrisTotal").textContent = rupiah(total);
+  document.getElementById("qrisModal").classList.add("open");
+}
 
-    // set jumlah manual dari input
-    function setQuantityManually(index, value) {
-        let raw = parseInt(value, 10);
-        if (isNaN(raw)) raw = 0;
-        if (raw < 0) raw = 0;
-        if (raw > 99) raw = 99;
-        if (quantities[index] !== raw) {
-            quantities[index] = raw;
-            updateAllTotals();
-            const notifDiv = document.getElementById('globalNotif');
-            const menuItem = MENU_ITEMS[index];
-            if (raw > 0) {
-                notifDiv.innerHTML = `✏️ ${menuItem.name} diperbarui: ${raw} cup (${formatRupiah(menuItem.price * raw)})`;
-                setTimeout(() => notifDiv.innerHTML = `💫 Total: ${formatRupiah(calculateGrandTotal())}`, 1600);
-            } else {
-                notifDiv.innerHTML = `🚫 ${menuItem.name} jumlah 0, dihapus dari keranjang`;
-                setTimeout(() => {
-                    if (calculateGrandTotal() === 0) notifDiv.innerHTML = `☕ Keranjang kosong. Mulai pesan menu favorit!`;
-                }, 1400);
-            }
-        }
-    }
+function closeQrisModal() {
+  document.getElementById("qrisModal").classList.remove("open");
+}
 
-    // reset semua pesanan (set semua quantity = 0)
-    function resetAllOrders() {
-        for (let i = 0; i < quantities.length; i++) {
-            quantities[i] = 0;
-        }
-        updateAllTotals();
-        const notifDiv = document.getElementById('globalNotif');
-        notifDiv.innerHTML = `🔄 Semua pesanan direset. Silakan pilih menu kembali.`;
-        setTimeout(() => {
-            if(calculateGrandTotal() === 0) notifDiv.innerHTML = `☕ Berkesan Coffee · 10 menu spesial menanti anda!`;
-        }, 2000);
-    }
+// ─── Modal 3: Kode Order (QR) ─────────────────────────────────
 
-    // proses checkout -> menampilkan ringkasan detail pesanan yang tidak nol
-    function checkout() {
-        const activeOrders = [];
-        for (let i = 0; i < MENU_ITEMS.length; i++) {
-            if (quantities[i] > 0) {
-                activeOrders.push({
-                    name: MENU_ITEMS[i].name,
-                    qty: quantities[i],
-                    subtotal: MENU_ITEMS[i].price * quantities[i]
-                });
-            }
-        }
-        if (activeOrders.length === 0) {
-            alert("Belum ada pesanan. Silakan pilih jumlah minuman terlebih dahulu!");
-            const notifDiv = document.getElementById('globalNotif');
-            notifDiv.innerHTML = "⚠️ Belum ada item dipesan. Atur jumlah setiap menu!";
-            return;
-        }
-        
-        let summary = "☕✨ BERKESAN COFFEE - RINCIAN PESANAN ✨☕\n\n";
-        let grandTotalCheck = 0;
-        activeOrders.forEach(order => {
-            summary += `🍹 ${order.name} : ${order.qty} cup → ${formatRupiah(order.subtotal)}\n`;
-            grandTotalCheck += order.subtotal;
-        });
-        summary += `\n───────────────────\n💰 TOTAL AKHIR : ${formatRupiah(grandTotalCheck)}\n\nTerima kasih telah berbelanja di Berkesan Coffee! Pesanan akan segera diproses.`;
-        alert(summary);
-        
-        const notifDiv = document.getElementById('globalNotif');
-        notifDiv.innerHTML = `✅ Pesanan sukses! Total ${formatRupiah(grandTotalCheck)}. Kami siapkan kopi terbaik untuk anda.`;
-        setTimeout(() => {
-            if(calculateGrandTotal() > 0) notifDiv.innerHTML = `☕ Pesanan terkirim. Nikmati momen kopimu!`;
-        }, 3000);
-    }
+function showOrderCode() {
+  closeQrisModal();
 
-    // render seluruh menu ke DOM
-    function renderMenu() {
-        const gridContainer = document.getElementById('menuGrid');
-        if (!gridContainer) return;
-        gridContainer.innerHTML = '';
-        
-        for (let i = 0; i < MENU_ITEMS.length; i++) {
-            const item = MENU_ITEMS[i];
-            const card = document.createElement('div');
-            card.className = 'drink-card';
-            
-            // bagian gambar
-            const imgDiv = document.createElement('div');
-            imgDiv.className = 'card-img';
-            const img = document.createElement('img');
-            // menggunakan foto yang sudah disediakan (untuk demo 10 minuman dengan gambar ciri khas)
-            // tambahkan atribut src alternatif agar bisa diganti jika pengguna punya foto asli
-            img.src = item.img;
-            img.alt = item.name;
-            img.title = `Klik dua kali untuk ganti foto (custom)`;
-            img.style.cursor = 'pointer';
-            img.addEventListener('dblclick', (e) => {
-                e.stopPropagation();
-                const newUrl = prompt(`Masukkan URL foto baru untuk ${item.name}:`, item.img);
-                if (newUrl && newUrl.trim() !== "") {
-                    img.src = newUrl;
-                    const notifDiv = document.getElementById('globalNotif');
-                    notifDiv.innerHTML = `🖼️ Foto ${item.name} diperbarui!`;
-                    setTimeout(() => updateAllTotals(), 800);
-                }
-            });
-            imgDiv.appendChild(img);
-            
-            // bagian info
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'card-info';
-            
-            const namePriceDiv = document.createElement('div');
-            namePriceDiv.className = 'drink-name';
-            namePriceDiv.innerHTML = `<span>${item.name}</span> <span class="drink-price">${formatRupiah(item.price)}</span>`;
-            
-            const orderDiv = document.createElement('div');
-            orderDiv.className = 'order-control';
-            
-            const qtyWrapper = document.createElement('div');
-            qtyWrapper.className = 'qty-wrapper';
-            
-            const decrementBtn = document.createElement('button');
-            decrementBtn.textContent = '−';
-            decrementBtn.className = 'qty-btn';
-            decrementBtn.addEventListener('click', () => changeQuantity(i, -1));
-            
-            const qtyInput = document.createElement('input');
-            qtyInput.type = 'text'; // menggunakan text untuk mencegah spinner ganjil
-            qtyInput.className = 'qty-input';
-            qtyInput.id = `qty-${i}`;
-            qtyInput.value = quantities[i];
-            qtyInput.addEventListener('input', (e) => {
-                let val = parseInt(e.target.value, 10);
-                if (isNaN(val)) val = 0;
-                if (val < 0) val = 0;
-                if (val > 99) val = 99;
-                qtyInput.value = val;
-                setQuantityManually(i, val);
-            });
-            
-            const incrementBtn = document.createElement('button');
-            incrementBtn.textContent = '+';
-            incrementBtn.className = 'qty-btn';
-            incrementBtn.addEventListener('click', () => changeQuantity(i, 1));
-            
-            qtyWrapper.appendChild(decrementBtn);
-            qtyWrapper.appendChild(qtyInput);
-            qtyWrapper.appendChild(incrementBtn);
-            
-            const itemTotalSpan = document.createElement('div');
-            itemTotalSpan.className = 'item-total';
-            const subtotalValue = item.price * quantities[i];
-            itemTotalSpan.innerHTML = `💰 total: <span id="itemTotal-${i}">${formatRupiah(subtotalValue)}</span>`;
-            
-            orderDiv.appendChild(qtyWrapper);
-            orderDiv.appendChild(itemTotalSpan);
-            
-            infoDiv.appendChild(namePriceDiv);
-            infoDiv.appendChild(orderDiv);
-            
-            card.appendChild(imgDiv);
-            card.appendChild(infoDiv);
-            gridContainer.appendChild(card);
-        }
-        // setelah render, pastikan semua total terupdate
-        updateAllTotals();
-    }
+  const order = currentOrder;
+  const code = currentPaymentCode;
 
-    // inisialisasi dan event global
-    function init() {
-        renderMenu();
-        const checkoutBtn = document.getElementById('checkoutBtn');
-        const resetBtn = document.getElementById('resetAllBtn');
-        if (checkoutBtn) checkoutBtn.addEventListener('click', checkout);
-        if (resetBtn) resetBtn.addEventListener('click', resetAllOrders);
-        
-        // tambahkan sentuhan : notifikasi awal
-        const notifDiv = document.getElementById('globalNotif');
-        notifDiv.innerHTML = "✨ 10 minuman spesial! Pilih jumlah masing-masing menu. ✨";
-        setTimeout(() => {
-            if (calculateGrandTotal() === 0) notifDiv.innerHTML = "☕ Klik + untuk memesan, subtotal akan langsung terakumulasi!";
-        }, 2000);
+  document.getElementById("ocCode").textContent = code || "—";
+  document.getElementById("ocMeja").textContent = `Meja ${order?.table_number || tableNumber}`;
+  document.getElementById("ocPayment").textContent =
+    order?.payment_method === "qris" ? "QRIS" : "Cash";
+  document.getElementById("ocTotal").textContent = rupiah(order?.total_price || 0);
+
+  document.getElementById("orderCodeModal").classList.add("open");
+
+  // Render QR setelah modal muncul
+  setTimeout(() => renderOrderQr(code), 80);
+}
+
+function renderOrderQr(code, attempt = 0) {
+  const canvas = document.getElementById("orderQrCanvas");
+  if (!canvas) return;
+
+  if (window.QRCode && typeof QRCode.toCanvas === "function") {
+    QRCode.toCanvas(canvas, code, { width: 200, margin: 1, color: { dark: "#172013", light: "#ffffff" } }, (err) => {
+      if (err) console.warn("QR render err:", err);
+    });
+    return;
+  }
+
+  if (attempt < 15) {
+    setTimeout(() => renderOrderQr(code, attempt + 1), 200);
+    return;
+  }
+
+  // Fallback: gambar dari API eksternal
+  const wrap = canvas.parentElement;
+  wrap.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=4&data=${encodeURIComponent(code)}" width="200" height="200" class="mx-auto rounded-xl" alt="QR ${code}">`;
+}
+
+function closeOrderCode() {
+  document.getElementById("orderCodeModal").classList.remove("open");
+}
+
+// ─── Download QR order sebagai gambar ────────────────────────
+
+function downloadOrderCode() {
+  const code = currentPaymentCode;
+  const order = currentOrder;
+  if (!code) return alert("Kode order tidak ditemukan.");
+
+  const QR_SIZE = 300;
+  const LABEL_H = 80;
+  const PAD = 24;
+  const W = QR_SIZE + PAD * 2;
+  const H = QR_SIZE + LABEL_H + PAD * 2;
+
+  const doDownload = (qrDataUrl) => {
+    const offscreen = document.createElement("canvas");
+    offscreen.width = W;
+    offscreen.height = H;
+    const ctx = offscreen.getContext("2d");
+
+    // Background
+    ctx.fillStyle = "#fffdf8";
+    ctx.fillRect(0, 0, W, H);
+
+    // White card behind QR
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.roundRect(PAD - 4, PAD - 4, QR_SIZE + 8, QR_SIZE + 8, 12);
+    ctx.fill();
+
+    // QR image
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, PAD, PAD, QR_SIZE, QR_SIZE);
+
+      // Green label area
+      ctx.fillStyle = "#3f5f35";
+      ctx.beginPath();
+      ctx.roundRect(PAD - 4, PAD + QR_SIZE + 8, QR_SIZE + 8, LABEL_H, 12);
+      ctx.fill();
+
+      // Code text
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 28px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(code, W / 2, PAD + QR_SIZE + 8 + 34);
+
+      // Sub info
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = "12px Inter, sans-serif";
+      ctx.fillText(
+        `Meja ${order?.table_number || tableNumber} • ${rupiah(order?.total_price || 0)}`,
+        W / 2,
+        PAD + QR_SIZE + 8 + 58,
+      );
+
+      const link = document.createElement("a");
+      link.download = `qr-order-${code}.png`;
+      link.href = offscreen.toDataURL("image/png");
+      link.click();
+    };
+    img.src = qrDataUrl;
+  };
+
+  // Generate QR data URL
+  if (window.QRCode && typeof QRCode.toDataURL === "function") {
+    QRCode.toDataURL(code, { width: QR_SIZE, margin: 1, color: { dark: "#172013", light: "#ffffff" } }, (err, url) => {
+      if (err) return;
+      doDownload(url);
+    });
+  } else {
+    // Fallback: pakai gambar dari canvas yang sudah dirender di modal
+    const existingCanvas = document.getElementById("orderQrCanvas");
+    if (existingCanvas && existingCanvas.width > 0) {
+      doDownload(existingCanvas.toDataURL());
     }
-    
-    init();
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ─── Event listeners ──────────────────────────────────────────
+
+document.getElementById("saveTableBtn").addEventListener("click", () =>
+  setTable(document.getElementById("manualTableInput").value),
+);
+document.getElementById("resetButton").addEventListener("click", () => {
+  cart = {};
+  renderMenus("all");
+  updateCart();
+});
+document.getElementById("checkoutBtn").addEventListener("click", openCheckout);
+document.getElementById("cartButton").addEventListener("click", openCheckout);
+document.getElementById("submitOrderBtn").addEventListener("click", submitOrder);
+
+document.querySelectorAll(".payment-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    selectedPayment = btn.dataset.payment;
+    document
+      .querySelectorAll(".payment-btn")
+      .forEach((b) => b.classList.remove("brand-soft"));
+    btn.classList.add("brand-soft");
+  });
+});
+
+// ─── Init ─────────────────────────────────────────────────────
+
+setTable(tableNumber);
+loadMenus();
+updateCart();

@@ -1,587 +1,993 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Berkesan Admin Dashboard</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Berkesan — Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap"rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    <link rel="stylesheet" href="/assets/css/dashboard.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  </head>
 
-  <!-- TailwindCSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <span>Memuat data dashboard…</span>
+    </div>
 
-  <!-- Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
 
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-
-  <!-- ChartJS -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    body{
-      font-family: 'Inter', sans-serif;
-      background: #f7facc;
-    }
-
-    .glass-card{
-      background: rgba(255,255,255,0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.4);
-    }
-
-    .shadow-soft{
-      box-shadow: 0 10px 30px rgba(5,5,3,0.08);
-    }
-
-    .sidebar-gradient{
-      background: linear-gradient(
-        180deg,
-        #63773c 0%,
-        #836527 100%
-      );
-    }
-
-    .top-gradient{
-      background: linear-gradient(
-        90deg,
-        #63773c 0%,
-        #bfc56b 100%
-      );
-    }
-
-    .menu-active{
-      background: rgba(247,250,204,0.15);
-      border: 1px solid rgba(247,250,204,0.1);
-    }
-  </style>
-</head>
-
-<body class="text-[#050503]">
-
-<div class="min-h-screen flex">
-
-  <!-- SIDEBAR -->
-  <aside class="w-[280px] sidebar-gradient text-white hidden lg:flex flex-col">
-
-    <!-- Brand -->
-    <div class="px-8 py-7 border-b border-white/10">
-      <div class="flex items-center gap-4">
-        <div class="w-14 h-14 rounded-2xl bg-[#f7facc] text-[#63773c] flex items-center justify-center text-2xl shadow-lg">
-          <i class="fa-solid fa-mug-hot"></i>
+    <!-- ── MODAL: TAMBAH/EDIT MENU ── -->
+    <div class="modal-overlay hidden" id="modalMenu">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modalMenuTitle">Tambah Menu Baru</h3>
+          <button class="modal-close" onclick="closeModalMenu()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
+        <div class="modal-body">
+          <input type="hidden" id="menuId" />
+          <!-- Image Upload -->
+          <div class="form-group">
+            <label class="form-label">Foto Menu</label>
+            <div class="img-upload-area" id="imgUploadArea" onclick="document.getElementById('menuImageInput').click()">
+              <div class="img-upload-icon">
+                <i class="fa-solid fa-image"></i>
+              </div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--muted)"> Klik untuk upload foto</div>
+              <div class="img-upload-hint">JPG, PNG, WEBP · Maks 2MB</div>
+              <input type="file" id="menuImageInput" accept="image/*" style="display: none" onchange="handleImageUpload(event)"/>
+            </div>
+            <input
+              type="text"
+              id="menuImageUrl"
+              class="form-input"
+              placeholder="Atau masukkan URL gambar langsung…"
+              oninput="handleImageUrlInput(this.value)"
+              style="margin-top: 6px"
+            />
+          </div>
 
-        <div>
-          <h1 class="text-xl font-black tracking-wide">
-            Berkesan
-          </h1>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label"
+                >Nama Menu <span style="color: var(--red)">*</span></label
+              >
+              <input
+                type="text"
+                id="menuName"
+                class="form-input"
+                placeholder="Contoh: Kopi Susu Gula Aren"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label"
+                >Kategori <span style="color: var(--red)">*</span></label
+              >
+              <select id="menuKategori" class="form-select">
+                <option value="">Pilih kategori…</option>
+              </select>
+            </div>
+          </div>
 
-          <p class="text-sm text-white/70">
-            Coffee Dashboard
-          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label"
+                >Harga (Rp) <span style="color: var(--red)">*</span></label
+              >
+              <input
+                type="number"
+                id="menuPrice"
+                class="form-input"
+                placeholder="25000"
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label"
+                >Stok <span style="color: var(--red)">*</span></label
+              >
+              <input
+                type="number"
+                id="menuStock"
+                class="form-input"
+                placeholder="50"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-toggle">
+              <label class="toggle-switch">
+                <input type="checkbox" id="menuAvailable" checked />
+                <span class="toggle-slider"></span>
+              </label>
+              Tersedia untuk dipesan
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeModalMenu()">Batal</button>
+          <button class="btn-primary" onclick="saveMenu()">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Menu
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- MENU -->
-    <div class="flex-1 p-5 space-y-3">
-
-      <button class="w-full menu-active rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
-        <i class="fa-solid fa-chart-line text-lg"></i>
-        <span class="font-medium">Dashboard</span>
-      </button>
-
-      <button class="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
-        <i class="fa-solid fa-cash-register text-lg"></i>
-        <span class="font-medium">Kasir</span>
-      </button>
-
-      <button class="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
-        <i class="fa-solid fa-mug-saucer text-lg"></i>
-        <span class="font-medium">Menu</span>
-      </button>
-
-      <button class="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
-        <i class="fa-solid fa-box-open text-lg"></i>
-        <span class="font-medium">Stok Barang</span>
-      </button>
-
-      <button class="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition hover:bg-white/10">
-        <i class="fa-solid fa-receipt text-lg"></i>
-        <span class="font-medium">Laporan</span>
-      </button>
-
-    </div>
-
-    <!-- Profile -->
-    <div class="p-5 border-t border-white/10">
-      <div class="bg-white/10 rounded-2xl p-4 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-[#f7facc] text-[#63773c] flex items-center justify-center font-bold">
-          F
+    <!-- ── MODAL: TAMBAH MEJA ── -->
+    <div class="modal-overlay hidden" id="modalMeja">
+      <div class="modal" style="max-width: 380px">
+        <div class="modal-header">
+          <h3>Tambah Meja Baru</h3>
+          <button class="modal-close" onclick="closeModalMeja()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-
-        <div class="flex-1">
-          <h3 class="font-semibold">
-            Fahmi Admin
-          </h3>
-
-          <p class="text-sm text-white/60">
-            Super Admin
-          </p>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label"
+              >Nomor / Nama Meja <span style="color: var(--red)">*</span></label
+            >
+            <input
+              type="text"
+              id="mejaNomor"
+              class="form-input"
+              placeholder="Contoh: 1, 2A, VIP-1, Outdoor-3…"
+            />
+            <span
+              style="
+                font-size: 10px;
+                color: var(--muted);
+                margin-top: 4px;
+                display: block;
+              "
+              >QR Code akan mengarahkan ke halaman menu dengan nomor meja
+              ini.</span
+            >
+          </div>
+          <div class="form-group">
+            <label class="form-label">Base URL Menu</label>
+            <input
+              type="text"
+              id="mejaBaseUrl"
+              class="form-input"
+              value="https://berkesan.app/menu?table="
+            />
+            <span
+              style="
+                font-size: 10px;
+                color: var(--muted);
+                margin-top: 4px;
+                display: block;
+              "
+              >URL lengkap:
+              <span
+                id="mejaUrlPreview"
+                style="color: var(--brand); font-weight: 600"
+                >https://berkesan.app/menu?table=</span
+              ></span
+            >
+          </div>
         </div>
-
-        <button class="text-white/70 hover:text-white">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-        </button>
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeModalMeja()">Batal</button>
+          <button class="btn-primary" onclick="saveMeja()">
+            <i class="fa-solid fa-plus"></i> Buat Meja & QR
+          </button>
+        </div>
       </div>
     </div>
 
-  </aside>
+    <!-- ── MODAL: KONFIRMASI HAPUS ── -->
+    <div class="modal-overlay hidden" id="modalConfirm">
+      <div class="modal" style="max-width: 360px">
+        <div class="modal-header">
+          <h3>Konfirmasi Hapus</h3>
+          <button class="modal-close" onclick="closeConfirm()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="text-align: center; padding: 8px 0">
+            <div
+              style="
+                width: 48px;
+                height: 48px;
+                background: var(--red-pale);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 12px;
+                font-size: 20px;
+                color: var(--red);
+              "
+            >
+              <i class="fa-solid fa-trash"></i>
+            </div>
+            <p style="font-size: 13px; font-weight: 600" id="confirmMsg">
+              Yakin ingin menghapus item ini?
+            </p>
+            <p style="font-size: 11px; color: var(--muted); margin-top: 4px">
+              Tindakan ini tidak dapat dibatalkan.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeConfirm()">Batal</button>
+          <button class="btn-danger" id="confirmOkBtn">
+            <i class="fa-solid fa-trash"></i> Hapus
+          </button>
+        </div>
+      </div>
+    </div>
 
-  <!-- MAIN CONTENT -->
-  <main class="flex-1 overflow-hidden">
-
-    <!-- TOPBAR -->
-    <header class="top-gradient px-8 py-6 text-white">
-
-      <div class="flex items-center justify-between">
-
-        <div>
-          <h2 class="text-3xl font-black">
-            Dashboard Coffee Shop
-          </h2>
-
-          <p class="text-white/70 mt-1">
-            Pantau penjualan, laba, stok, dan transaksi terbaru
-          </p>
+    <div class="shell">
+      <!-- ══════════ SIDEBAR ══════════ -->
+      <aside class="sidebar">
+        <div class="sb-brand">
+          <div class="sb-ico"><i class="fa-solid fa-mug-hot"></i></div>
+          <div>
+            <div class="sb-title">Berkesan</div>
+            <div class="sb-sub">Admin Panel</div>
+          </div>
         </div>
 
-        <div class="hidden md:flex items-center gap-4">
-
-          <button class="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 transition">
-            <i class="fa-solid fa-bell"></i>
+        <nav class="sb-nav">
+          <div class="sb-section">Utama</div>
+          <button class="sb-item active" onclick="showPage('dashboard')">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+          </button>
+          <button class="sb-item" onclick="showPage('rekap')">
+            <i class="fa-solid fa-calendar-days"></i> Rekap Bulanan
+          </button>
+          <button class="sb-item" onclick="showPage('stok')">
+            <i class="fa-solid fa-box-open"></i> Stok Barang
+          </button>
+          <button class="sb-item" onclick="showPage('laporan')">
+            <i class="fa-solid fa-receipt"></i> Laporan Transaksi
           </button>
 
-          <button class="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 transition">
-            <i class="fa-solid fa-gear"></i>
+          <div class="sb-section">Kelola</div>
+          <button class="sb-item" onclick="showPage('menu')">
+            <i class="fa-solid fa-utensils"></i> Kelola Menu
+          </button>
+          <button class="sb-item" onclick="showPage('meja')">
+            <i class="fa-solid fa-qrcode"></i> Meja & QR Code
           </button>
 
-        </div>
+          <div class="sb-section">Kasir</div>
+          <button class="sb-item" onclick="showPage('antrean')">
+            <i class="fa-solid fa-ticket"></i> Antrean Aktif
+          </button>
+        </nav>
 
-      </div>
-
-    </header>
-
-    <!-- CONTENT -->
-    <div class="p-8">
-
-      <!-- KPI -->
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-
-        <div class="glass-card shadow-soft rounded-3xl p-6">
-          <div class="flex justify-between items-start">
-
+        <div class="sb-profile">
+          <div class="sb-profile-inner">
+            <div class="sb-avatar" id="sb-initial">A</div>
             <div>
-              <p class="text-sm text-[#836527] font-medium">
-                Pendapatan Hari Ini
-              </p>
-
-              <h3 class="text-3xl font-black mt-3">
-                Rp 2.4jt
-              </h3>
-
-              <p class="text-sm mt-2 text-[#63773c]">
-                +18% dari kemarin
-              </p>
+              <div class="sb-name" id="sb-name">Admin</div>
+              <div class="sb-role" id="sb-role">Super Admin</div>
             </div>
+            <button class="sb-logout" onclick="handleLogout()" title="Logout">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+          </div>
+        </div>
+      </aside>
 
-            <div class="w-14 h-14 rounded-2xl bg-[#bfc56b]/20 text-[#63773c] flex items-center justify-center text-xl">
-              <i class="fa-solid fa-wallet"></i>
+      <!-- ══════════ MAIN ══════════ -->
+      <main class="main">
+        <!-- Topbar -->
+        <div class="topbar">
+          <div>
+            <h2 id="page-title">Dashboard Hari Ini</h2>
+            <p id="page-sub">Memuat…</p>
+          </div>
+          <div class="topbar-btns">
+            <button
+              class="topbar-btn btn-refresh"
+              onclick="refreshCurrent()"
+              title="Refresh data"
+              style="width: auto; gap: 5px; font-size: 11px; font-weight: 600"
+            >
+              <i class="fa-solid fa-rotate-right"></i> Refresh
+            </button>
+            <div class="notif-wrap">
+              <button class="topbar-btn" title="Notifikasi">
+                <i class="fa-solid fa-bell"></i>
+              </button>
+              <div class="notif-dot" id="notifDot" style="display: none"></div>
             </div>
-
           </div>
         </div>
 
-        <div class="glass-card shadow-soft rounded-3xl p-6">
-          <div class="flex justify-between items-start">
-
-            <div>
-              <p class="text-sm text-[#836527] font-medium">
-                Total Order
-              </p>
-
-              <h3 class="text-3xl font-black mt-3">
-                154
-              </h3>
-
-              <p class="text-sm mt-2 text-[#63773c]">
-                42 takeaway
-              </p>
-            </div>
-
-            <div class="w-14 h-14 rounded-2xl bg-[#bfc56b]/20 text-[#63773c] flex items-center justify-center text-xl">
-              <i class="fa-solid fa-cart-shopping"></i>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="glass-card shadow-soft rounded-3xl p-6">
-          <div class="flex justify-between items-start">
-
-            <div>
-              <p class="text-sm text-[#836527] font-medium">
-                Produk Terjual
-              </p>
-
-              <h3 class="text-3xl font-black mt-3">
-                421
-              </h3>
-
-              <p class="text-sm mt-2 text-[#63773c]">
-                Kopi & Non Kopi
-              </p>
-            </div>
-
-            <div class="w-14 h-14 rounded-2xl bg-[#bfc56b]/20 text-[#63773c] flex items-center justify-center text-xl">
-              <i class="fa-solid fa-mug-hot"></i>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="glass-card shadow-soft rounded-3xl p-6">
-          <div class="flex justify-between items-start">
-
-            <div>
-              <p class="text-sm text-[#836527] font-medium">
-                Rating Pelanggan
-              </p>
-
-              <h3 class="text-3xl font-black mt-3">
-                4.9 ★
-              </h3>
-
-              <p class="text-sm mt-2 text-[#63773c]">
-                230 review
-              </p>
-            </div>
-
-            <div class="w-14 h-14 rounded-2xl bg-[#bfc56b]/20 text-[#63773c] flex items-center justify-center text-xl">
-              <i class="fa-solid fa-star"></i>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-
-      <!-- CHART -->
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-
-        <!-- Chart -->
-        <div class="xl:col-span-2 glass-card shadow-soft rounded-3xl p-6">
-
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <h3 class="text-xl font-bold">
-                Statistik Penjualan
-              </h3>
-
-              <p class="text-sm text-gray-500 mt-1">
-                Pendapatan 7 hari terakhir
-              </p>
-            </div>
-
-            <button class="bg-[#63773c] text-white px-4 py-2 rounded-xl text-sm hover:opacity-90">
-              Mingguan
+        <!-- ── PAGE: DASHBOARD ── -->
+        <div class="content" id="page-dashboard">
+          <div class="err-row" id="dashErr" style="display: none">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="dashErrMsg">Gagal memuat data.</span>
+            <button
+              onclick="loadDashboard()"
+              style="
+                margin-left: auto;
+                background: none;
+                border: none;
+                color: var(--red);
+                cursor: pointer;
+                font-weight: 700;
+                font-size: 12px;
+              "
+            >
+              Coba Lagi
             </button>
           </div>
 
-          <canvas id="salesChart" height="120"></canvas>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-label">Pendapatan Hari Ini</div>
+                <div class="kpi-icon green">
+                  <i class="fa-solid fa-wallet"></i>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpi-income">—</div>
+              <div class="kpi-change neutral" id="kpi-income-sub">Memuat…</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-label">Total Order</div>
+                <div class="kpi-icon gold">
+                  <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpi-orders">—</div>
+              <div class="kpi-change neutral" id="kpi-orders-sub">Memuat…</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-label">Produk Terjual</div>
+                <div class="kpi-icon green">
+                  <i class="fa-solid fa-mug-hot"></i>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpi-sold">—</div>
+              <div class="kpi-change neutral">
+                <i class="fa-solid fa-circle-info"></i> Kopi &amp; Non-Kopi
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-label">Stok Menipis</div>
+                <div class="kpi-icon red">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpi-lowstock">—</div>
+              <div class="kpi-change down" id="kpi-lowstock-sub">
+                <i class="fa-solid fa-arrow-trend-down"></i> item perlu restok
+              </div>
+            </div>
+          </div>
 
+          <div class="mid-row">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Statistik Penjualan</h3>
+                  <p>Pendapatan 7 hari terakhir</p>
+                </div>
+                <button class="btn-refresh" onclick="loadDashboard()">
+                  <i class="fa-solid fa-rotate-right"></i>
+                </button>
+              </div>
+              <div class="chart-wrap" style="height: 160px">
+                <canvas id="salesChart"></canvas>
+              </div>
+            </div>
+            <div class="card" style="display: flex; flex-direction: column">
+              <div class="card-header">
+                <h3>Pesanan Terbaru</h3>
+                <button class="see-all" onclick="showPage('laporan')">
+                  Semua →
+                </button>
+              </div>
+              <div
+                id="recentOrdersList"
+                style="flex: 1; overflow-y: auto; max-height: 200px"
+              >
+                <div class="empty">
+                  <i class="fa-solid fa-receipt"></i>Memuat…
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bot-row-3">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Produk Terlaris</h3>
+                  <p>Berdasarkan semua waktu</p>
+                </div>
+                <button
+                  class="btn-export"
+                  onclick="
+                    exportTableCSV('bestProductsTable', 'produk-terlaris')
+                  "
+                >
+                  <i class="fa-solid fa-file-arrow-down"></i> CSV
+                </button>
+              </div>
+              <div style="overflow-x: auto">
+                <table id="bestProductsTable">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Produk</th>
+                      <th>Terjual</th>
+                      <th>Pendapatan</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bestProductsTbody">
+                    <tr>
+                      <td colspan="5" class="empty">Memuat…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Stok Menipis</h3>
+                  <p>Perlu perhatian segera</p>
+                </div>
+                <span class="badge b-slow" id="lowStockBadge">0</span>
+              </div>
+              <div id="lowStockList">
+                <div class="empty">
+                  <i class="fa-solid fa-boxes-stacked"></i>Memuat…
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>Antrean Aktif</h3>
+                <span class="badge b-trend" id="queueBadge">0</span>
+              </div>
+              <div id="queueList">
+                <div class="empty">
+                  <i class="fa-solid fa-ticket"></i>Memuat…
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Recent Orders -->
-        <div class="glass-card shadow-soft rounded-3xl p-6">
-
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold">
-              Pesanan Baru
-            </h3>
-
-            <button class="text-[#63773c] font-semibold text-sm">
-              Lihat Semua
+        <!-- ── PAGE: REKAP BULANAN ── -->
+        <div class="content" id="page-rekap" style="display: none">
+          <div class="card-header" style="margin-bottom: 0">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <select
+                id="rekapMonth"
+                class="range-sel"
+                onchange="loadRekap()"
+              ></select>
+              <select
+                id="rekapYear"
+                class="range-sel"
+                onchange="loadRekap()"
+              ></select>
+            </div>
+            <button class="btn-export" onclick="exportRekap()">
+              <i class="fa-solid fa-file-arrow-down"></i> Export CSV
             </button>
           </div>
-
-          <div class="space-y-4">
-
-            <div class="flex items-center gap-4 p-4 rounded-2xl bg-[#f7facc]">
-              <div class="w-12 h-12 rounded-xl bg-[#63773c] text-white flex items-center justify-center">
-                <i class="fa-solid fa-mug-hot"></i>
+          <div class="rekap-kpi">
+            <div class="rekap-card">
+              <div class="rekap-lbl">Total Pendapatan</div>
+              <div
+                class="rekap-val"
+                id="rek-income"
+                style="color: var(--brand)"
+              >
+                —
               </div>
-
-              <div class="flex-1">
-                <h4 class="font-semibold">
-                  Caramel Latte
-                </h4>
-
-                <p class="text-sm text-gray-500">
-                  2 item • Cash
-                </p>
+              <div
+                class="rekap-ch"
+                id="rek-income-ch"
+                style="color: var(--muted)"
+              >
+                —
               </div>
-
-              <span class="font-bold text-[#63773c]">
-                Rp 58k
-              </span>
             </div>
-
-            <div class="flex items-center gap-4 p-4 rounded-2xl bg-[#f7facc]">
-              <div class="w-12 h-12 rounded-xl bg-[#836527] text-white flex items-center justify-center">
-                <i class="fa-solid fa-cookie-bite"></i>
+            <div class="rekap-card">
+              <div class="rekap-lbl">Total Order</div>
+              <div class="rekap-val" id="rek-orders">—</div>
+              <div
+                class="rekap-ch"
+                id="rek-orders-ch"
+                style="color: var(--muted)"
+              >
+                —
               </div>
-
-              <div class="flex-1">
-                <h4 class="font-semibold">
-                  Croissant
-                </h4>
-
-                <p class="text-sm text-gray-500">
-                  1 item • QRIS
-                </p>
-              </div>
-
-              <span class="font-bold text-[#836527]">
-                Rp 24k
-              </span>
             </div>
-
-            <div class="flex items-center gap-4 p-4 rounded-2xl bg-[#f7facc]">
-              <div class="w-12 h-12 rounded-xl bg-[#050503] text-white flex items-center justify-center">
-                <i class="fa-solid fa-ice-cream"></i>
+            <div class="rekap-card">
+              <div class="rekap-lbl">Avg Order Value</div>
+              <div class="rekap-val" id="rek-avg" style="color: var(--gold)">
+                —
               </div>
-
-              <div class="flex-1">
-                <h4 class="font-semibold">
-                  Matcha Blend
-                </h4>
-
-                <p class="text-sm text-gray-500">
-                  3 item • Transfer
-                </p>
+              <div class="rekap-ch" style="color: var(--muted)">
+                per transaksi
               </div>
-
-              <span class="font-bold text-[#050503]">
-                Rp 92k
-              </span>
             </div>
-
+            <div class="rekap-card">
+              <div class="rekap-lbl">Produk Terjual</div>
+              <div class="rekap-val" id="rek-sold">—</div>
+              <div class="rekap-ch" style="color: var(--muted)">item</div>
+            </div>
           </div>
-
+          <div class="bot-row">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Tren Harian</h3>
+                  <p>Pendapatan per hari bulan ini</p>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height: 200px">
+                <canvas id="rekapChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Kontribusi Produk</h3>
+                  <p>Pendapatan per menu bulan ini</p>
+                </div>
+              </div>
+              <div id="rekapProdBars" class="pbar-wrap"></div>
+            </div>
+          </div>
+          <div class="bot-row">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Metode Pembayaran</h3>
+                  <p>Distribusi bulan ini</p>
+                </div>
+              </div>
+              <div class="chart-legend" id="payLegend"></div>
+              <div class="chart-wrap" style="height: 150px">
+                <canvas id="payChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Produk Terlaris Bulan Ini</h3>
+                  <p>Top 5 berdasarkan pendapatan</p>
+                </div>
+                <button
+                  class="btn-export"
+                  onclick="exportTableCSV('rekapProdTable', 'rekap-produk')"
+                >
+                  <i class="fa-solid fa-file-arrow-down"></i> CSV
+                </button>
+              </div>
+              <div style="overflow-x: auto">
+                <table id="rekapProdTable">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Produk</th>
+                      <th>Terjual</th>
+                      <th>Pendapatan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rekapProdTbody">
+                    <tr>
+                      <td colspan="4" class="empty">Memuat…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
 
-      </div>
-
-      <!-- TABLE + STOCK -->
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-        <!-- Table -->
-        <div class="xl:col-span-2 glass-card shadow-soft rounded-3xl p-6 overflow-hidden">
-
-          <div class="flex items-center justify-between mb-6">
-
-            <div>
-              <h3 class="text-xl font-bold">
-                Produk Terlaris
-              </h3>
-
-              <p class="text-sm text-gray-500 mt-1">
-                Penjualan bulan ini
-              </p>
+        <!-- ── PAGE: STOK ── -->
+        <div class="content" id="page-stok" style="display: none">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <div class="in-tabs">
+              <button class="in-tab active" onclick="filterStok('all', this)">
+                Semua
+              </button>
+              <button class="in-tab" onclick="filterStok('kritis', this)">
+                Kritis (≤5)
+              </button>
+              <button class="in-tab" onclick="filterStok('menipis', this)">
+                Menipis (≤10)
+              </button>
+              <button class="in-tab" onclick="filterStok('aman', this)">
+                Aman (>10)
+              </button>
             </div>
-
-            <button class="bg-[#63773c] text-white px-4 py-2 rounded-xl text-sm">
-              Export
+            <button class="btn-refresh" onclick="loadStok()">
+              <i class="fa-solid fa-rotate-right"></i> Refresh Stok
             </button>
-
           </div>
+          <div class="stok-grid" id="stokGrid">
+            <div class="empty" style="grid-column: 1/-1">
+              <i class="fa-solid fa-box-open"></i>Memuat…
+            </div>
+          </div>
+        </div>
 
-          <div class="overflow-x-auto">
-
-            <table class="w-full">
-
+        <!-- ── PAGE: LAPORAN ── -->
+        <div class="content" id="page-laporan" style="display: none">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+            "
+          >
+            <input
+              type="date"
+              id="lapTgl"
+              class="range-sel"
+              style="padding: 5px 10px"
+            />
+            <select id="lapStatus" class="range-sel" onchange="loadLaporan()">
+              <option value="">Semua Status</option>
+              <option value="pending">Pending</option>
+              <option value="diproses">Diproses</option>
+              <option value="selesai">Selesai</option>
+              <option value="dibatalkan">Dibatalkan</option>
+            </select>
+            <select id="lapPayment" class="range-sel" onchange="loadLaporan()">
+              <option value="">Semua Pembayaran</option>
+              <option value="cash">Cash</option>
+              <option value="qris">QRIS</option>
+            </select>
+            <button class="btn-refresh" onclick="loadLaporan()">
+              <i class="fa-solid fa-magnifying-glass"></i> Cari
+            </button>
+            <button
+              class="btn-export"
+              onclick="exportTableCSV('laporanTable', 'laporan-transaksi')"
+            >
+              <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+            </button>
+          </div>
+          <div class="lap-summary">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-label">Total Pendapatan</div>
+                <div class="kpi-icon green">
+                  <i class="fa-solid fa-wallet"></i>
+                </div>
+              </div>
+              <div class="kpi-value" id="lap-total">—</div>
+              <div class="kpi-change neutral">dari filter saat ini</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-label">Jumlah Order</div>
+                <div class="kpi-icon gold">
+                  <i class="fa-solid fa-list-check"></i>
+                </div>
+              </div>
+              <div class="kpi-value" id="lap-count">—</div>
+              <div class="kpi-change neutral">transaksi</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-label">Rata-rata Order</div>
+                <div class="kpi-icon green">
+                  <i class="fa-solid fa-calculator"></i>
+                </div>
+              </div>
+              <div class="kpi-value" id="lap-avg">—</div>
+              <div class="kpi-change neutral">per transaksi</div>
+            </div>
+          </div>
+          <div class="card" style="overflow-x: auto">
+            <table id="laporanTable">
               <thead>
-                <tr class="border-b border-gray-200 text-left">
-                  <th class="pb-4 text-sm text-gray-500">Produk</th>
-                  <th class="pb-4 text-sm text-gray-500">Terjual</th>
-                  <th class="pb-4 text-sm text-gray-500">Pendapatan</th>
-                  <th class="pb-4 text-sm text-gray-500">Status</th>
+                <tr>
+                  <th>Kode Order</th>
+                  <th>Pelanggan</th>
+                  <th>Total</th>
+                  <th>Metode</th>
+                  <th>Status</th>
+                  <th>Waktu</th>
                 </tr>
               </thead>
-
-              <tbody class="divide-y divide-gray-100">
-
-                <tr class="hover:bg-[#f7facc]/60 transition">
-                  <td class="py-4 font-semibold">Americano</td>
-                  <td>120 pcs</td>
-                  <td>Rp 3.2jt</td>
-                  <td>
-                    <span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">
-                      Best Seller
-                    </span>
-                  </td>
+              <tbody id="laporanTbody">
+                <tr>
+                  <td colspan="6" class="empty">Memuat…</td>
                 </tr>
-
-                <tr class="hover:bg-[#f7facc]/60 transition">
-                  <td class="py-4 font-semibold">Caramel Latte</td>
-                  <td>98 pcs</td>
-                  <td>Rp 2.8jt</td>
-                  <td>
-                    <span class="bg-[#bfc56b]/30 text-[#63773c] text-xs px-3 py-1 rounded-full font-semibold">
-                      Trending
-                    </span>
-                  </td>
-                </tr>
-
-                <tr class="hover:bg-[#f7facc]/60 transition">
-                  <td class="py-4 font-semibold">Matcha Blend</td>
-                  <td>76 pcs</td>
-                  <td>Rp 2.1jt</td>
-                  <td>
-                    <span class="bg-yellow-100 text-yellow-700 text-xs px-3 py-1 rounded-full font-semibold">
-                      Popular
-                    </span>
-                  </td>
-                </tr>
-
               </tbody>
-
             </table>
-
           </div>
-
         </div>
 
-        <!-- STOCK -->
-        <div class="glass-card shadow-soft rounded-3xl p-6">
-
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold">
-              Stok Menipis
-            </h3>
-
-            <span class="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full font-bold">
-              3
-            </span>
+        <!-- ══════════════════════════════════════════
+           PAGE: KELOLA MENU
+      ══════════════════════════════════════════ -->
+        <div class="content" id="page-menu" style="display: none">
+          <!-- Toolbar -->
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              flex-wrap: wrap;
+              gap: 8px;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+              "
+            >
+              <div class="in-tabs" id="menuKatTabs" style="margin-bottom: 0">
+                <button
+                  class="in-tab active"
+                  onclick="filterMenuKat('all', this)"
+                  data-kat="all"
+                >
+                  Semua
+                </button>
+              </div>
+              <div style="position: relative">
+                <i
+                  class="fa-solid fa-magnifying-glass"
+                  style="
+                    position: absolute;
+                    left: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: var(--muted);
+                    font-size: 11px;
+                  "
+                ></i>
+                <input
+                  type="text"
+                  id="menuSearch"
+                  class="form-input"
+                  placeholder="Cari menu…"
+                  style="padding-left: 30px; width: 180px; font-size: 12px"
+                  oninput="renderMenuGrid()"
+                />
+              </div>
+            </div>
+            <button class="btn-primary" onclick="openModalMenuNew()">
+              <i class="fa-solid fa-plus"></i> Tambah Menu
+            </button>
           </div>
 
-          <div class="space-y-4">
-
-            <div class="flex justify-between items-center p-4 rounded-2xl bg-red-50">
-              <div>
-                <h4 class="font-semibold">
-                  Biji Arabica
-                </h4>
-
-                <p class="text-sm text-gray-500">
-                  Min. 10
-                </p>
+          <!-- Stats bar -->
+          <div style="display: flex; gap: 10px; flex-wrap: wrap">
+            <div class="kpi-card" style="flex: 1; min-width: 120px">
+              <div class="kpi-top">
+                <div class="kpi-label">Total Menu</div>
+                <div class="kpi-icon green">
+                  <i class="fa-solid fa-utensils"></i>
+                </div>
               </div>
-
-              <span class="text-red-700 font-black text-lg">
-                4
-              </span>
+              <div class="kpi-value" id="menuStatTotal">—</div>
             </div>
-
-            <div class="flex justify-between items-center p-4 rounded-2xl bg-yellow-50">
-              <div>
-                <h4 class="font-semibold">
-                  Susu Oat
-                </h4>
-
-                <p class="text-sm text-gray-500">
-                  Min. 8
-                </p>
+            <div class="kpi-card" style="flex: 1; min-width: 120px">
+              <div class="kpi-top">
+                <div class="kpi-label">Tersedia</div>
+                <div class="kpi-icon green">
+                  <i class="fa-solid fa-check-circle"></i>
+                </div>
               </div>
-
-              <span class="text-yellow-700 font-black text-lg">
-                6
-              </span>
+              <div class="kpi-value" id="menuStatAvail">—</div>
             </div>
-
-            <div class="flex justify-between items-center p-4 rounded-2xl bg-orange-50">
-              <div>
-                <h4 class="font-semibold">
-                  Matcha Powder
-                </h4>
-
-                <p class="text-sm text-gray-500">
-                  Min. 5
-                </p>
+            <div class="kpi-card" style="flex: 1; min-width: 120px">
+              <div class="kpi-top">
+                <div class="kpi-label">Nonaktif</div>
+                <div class="kpi-icon red"><i class="fa-solid fa-ban"></i></div>
               </div>
-
-              <span class="text-orange-700 font-black text-lg">
-                2
-              </span>
+              <div class="kpi-value" id="menuStatInactive">—</div>
             </div>
-
+            <div class="kpi-card" style="flex: 1; min-width: 120px">
+              <div class="kpi-top">
+                <div class="kpi-label">Stok Kritis</div>
+                <div class="kpi-icon amber">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+              </div>
+              <div class="kpi-value" id="menuStatLow">—</div>
+            </div>
           </div>
 
+          <!-- Grid -->
+          <div class="menu-grid" id="menuGrid">
+            <div class="empty" style="grid-column: 1/-1">
+              <i class="fa-solid fa-utensils"></i>Memuat…
+            </div>
+          </div>
         </div>
 
-      </div>
+        <!-- ══════════════════════════════════════════
+           PAGE: MEJA & QR CODE
+      ══════════════════════════════════════════ -->
+        <div class="content" id="page-meja" style="display: none">
+          <!-- Toolbar -->
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              flex-wrap: wrap;
+              gap: 8px;
+            "
+          >
+            <div>
+              <p style="font-size: 12px; color: var(--muted)">
+                QR Code meja mengarah langsung ke halaman pemesanan dengan nomor
+                meja tertanam.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px">
+              <button class="btn-refresh" onclick="loadMeja()">
+                <i class="fa-solid fa-rotate-right"></i> Refresh
+              </button>
+              <button class="btn-primary" onclick="openModalMeja()">
+                <i class="fa-solid fa-plus"></i> Tambah Meja
+              </button>
+            </div>
+          </div>
 
+          <!-- Base URL config -->
+          <div class="card" style="padding: 12px 16px">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+              "
+            >
+              <i
+                class="fa-solid fa-link"
+                style="color: var(--brand); font-size: 13px"
+              ></i>
+              <span style="font-size: 12px; font-weight: 600"
+                >Base URL Menu:</span
+              >
+              <input
+                type="text"
+                id="globalBaseUrl"
+                class="form-input"
+                value="https://berkesan.app/menu?table="
+                style="
+                  flex: 1;
+                  min-width: 200px;
+                  font-size: 12px;
+                  padding: 6px 10px;
+                "
+                oninput="onBaseUrlChange()"
+              />
+              <button
+                class="btn-primary"
+                onclick="regenerateAllQR()"
+                style="white-space: nowrap; font-size: 11px; padding: 6px 10px"
+              >
+                <i class="fa-solid fa-qrcode"></i> Generate Ulang Semua
+              </button>
+            </div>
+          </div>
+
+          <!-- Meja Grid -->
+          <div class="meja-grid" id="mejaGrid">
+            <div class="empty" style="grid-column: 1/-1">
+              <i class="fa-solid fa-chair"></i>Memuat…
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PAGE: ANTREAN ── -->
+        <div class="content" id="page-antrean" style="display: none">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <div>
+              <h3 style="font-size: 14px; font-weight: 700">
+                Antrean Hari Ini
+              </h3>
+              <p style="font-size: 11px; color: var(--muted); margin-top: 2px">
+                Update otomatis setiap 30 detik
+              </p>
+            </div>
+            <button class="btn-refresh" onclick="loadAntrean()">
+              <i class="fa-solid fa-rotate-right"></i> Refresh
+            </button>
+          </div>
+          <div class="bot-row">
+            <div class="card">
+              <div class="card-header">
+                <div><h3>Sedang Diproses</h3></div>
+                <span class="badge b-trend" id="qDiprosesBadge">0</span>
+              </div>
+              <div id="qDiprosesList">
+                <div class="empty">
+                  <i class="fa-solid fa-hourglass-half"></i>Tidak ada
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div><h3>Menunggu</h3></div>
+                <span class="badge b-slow" id="qPendingBadge">0</span>
+              </div>
+              <div id="qPendingList">
+                <div class="empty">
+                  <i class="fa-solid fa-clock"></i>Tidak ada
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div><h3>Selesai Hari Ini</h3></div>
+              <span class="badge b-best" id="qSelesaiBadge">0</span>
+            </div>
+            <div style="overflow-x: auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Kode</th>
+                    <th>Pelanggan</th>
+                    <th>Total</th>
+                    <th>Metode</th>
+                    <th>Waktu Selesai</th>
+                  </tr>
+                </thead>
+                <tbody id="qSelesaiTbody">
+                  <tr>
+                    <td colspan="5" class="empty">
+                      Tidak ada order selesai hari ini
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
 
-  </main>
-
-</div>
-
-<script>
-
-const ctx = document.getElementById('salesChart');
-
-new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-    datasets: [
-      {
-        label: 'Pendapatan',
-        data: [1200000, 1800000, 1400000, 2400000, 2200000, 2800000, 2600000],
-        borderColor: '#63773c',
-        backgroundColor: 'rgba(99,119,60,0.15)',
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#63773c',
-        pointRadius: 4
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    scales: {
-      y: {
-        grid: {
-          color: '#e5e7eb'
-        }
-      },
-      x: {
-        grid: {
-          display: false
-        }
-      }
-    }
-  }
-});
-
-</script>
-
-</body>
+    <script src="/js/dashboardAdmin.js"></script>
+  </body>
 </html>
