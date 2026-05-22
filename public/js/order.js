@@ -33,7 +33,7 @@ function setTable(value) {
 
 async function apiJson(url, options = {}) {
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
     ...options,
   });
   const json = await res.json();
@@ -49,7 +49,7 @@ async function loadMenus() {
   grid.innerHTML =
     '<div class="card rounded-xl p-6 col-span-full text-center text-[#66705e]">Memuat menu...</div>';
   try {
-    const data = await apiJson("/api/menu");
+    const data = await apiJson(`${BACKEND_URL}/api/menu`);
     menus = data.items || [];
     buildCategories();
     renderMenus("all");
@@ -195,7 +195,7 @@ async function submitOrder() {
       })),
     };
 
-    const data = await apiJson("/api/order", {
+    const data = await apiJson(`${BACKEND_URL}/api/order`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -237,6 +237,15 @@ function openQrisModal() {
 
 function closeQrisModal() {
   document.getElementById("qrisModal").classList.remove("open");
+}
+
+function downloadQrisImage() {
+  const img = document.getElementById("qrisImage");
+  if (!img || !img.src) return alert("Gambar QRIS tidak tersedia.");
+  const link = document.createElement("a");
+  link.download = "qris-berkesan.png";
+  link.href = img.src;
+  link.click();
 }
 
 // ─── Modal 3: Kode Order (QR) ─────────────────────────────────

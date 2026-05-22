@@ -1,13 +1,52 @@
 /* ═══════════════════════════════
    CONFIG
 ═══════════════════════════════ */
-const API = '/api/kasir';
+const API = `${BACKEND_URL}/api/kasir`;
 let _currentSection = 'pesanan';
 let _allOrders      = [];
 let _queueOrders    = [];
 let _currentQNum    = null;
 let _scanReader     = null;
 let _autoRefresh    = null;
+
+/* ── Queue counter: persist per hari via localStorage ── */
+const _QUEUE_KEY = 'berkesan_queue_counter';
+const _QUEUE_MAP_KEY = 'berkesan_queue_map'; // Mapping A01 → order data
+
+function _todayStr() {
+  return new Date().toISOString().slice(0, 10); // "2026-05-20"
+}
+
+function _getQueueCounter() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(_QUEUE_KEY) || '{}');
+    if (raw.date !== _todayStr()) return 0; // hari baru → mulai dari 0
+    return raw.count || 0;
+  } catch { return 0; }
+}
+
+function _setQueueCounter(n) {
+  localStorage.setItem(_QUEUE_KEY, JSON.stringify({ date: _todayStr(), count: n }));
+}
+
+/* Simpan mapping nomor antrian ke order data */
+function _getQueueMap() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(_QUEUE_MAP_KEY) || '{}');
+    if (raw.date !== _todayStr()) return { date: _todayStr(), map: {} };
+    return raw;
+  } catch { return { date: _todayStr(), map: {} }; }
+}
+
+function _setQueueMap(map) {
+  localStorage.setItem(_QUEUE_MAP_KEY, JSON.stringify({ date: _todayStr(), map }));
+}
+
+function _addQueueMapping(number, orderData) {
+  const data = _getQueueMap();
+  data.map[number] = orderData;
+  _setQueueMap(data.map);
+}
 
 /* ═══════════════════════════════
    UTILITY
@@ -67,6 +106,29 @@ function queueNo(index) {
   return 'A' + String(index + 1).padStart(2, '0');
 }
 
+/* Ambil/buat nomor antrian permanen per order_code, persist di localStorage */
+const _ORDER_NUM_KEY = 'berkesan_order_nums';
+
+function _getOrderNums() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(_ORDER_NUM_KEY) || '{}');
+    // Reset jika beda hari
+    if (raw._date !== _todayStr()) return { _date: _todayStr() };
+    return raw;
+  } catch { return { _date: _todayStr() }; }
+}
+
+function _assignOrderNum(orderCode) {
+  const nums = _getOrderNums();
+  if (!nums[orderCode]) {
+    // Hitung berapa order yang sudah punya nomor hari ini
+    const count = Object.keys(nums).filter(k => k !== '_date').length + 1;
+    nums[orderCode] = count;
+    localStorage.setItem(_ORDER_NUM_KEY, JSON.stringify(nums));
+  }
+  return nums[orderCode];
+}
+
 /* ═══════════════════════════════
    CLOCK
 ═══════════════════════════════ */
@@ -110,7 +172,7 @@ function refreshCurrent() { showSection(_currentSection); }
    FETCH WRAPPER
 ═══════════════════════════════ */
 async function apiFetch(url, opts = {}) {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }, ...opts });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const j = await res.json();
   if (!j.success) throw new Error(j.message || 'Server error');
@@ -386,19 +448,26 @@ function stopScan() {
 }
 
 /* ═══════════════════════════════
-   ANTRIAN
+   ANTRIAN - FIXED VERSION
 ═══════════════════════════════ */
 async function loadAntrian() {
   try {
     const data = await apiFetch(`${API}/queue`);
     _queueOrders = data.orders || [];
-    renderAntrian(_queueOrders);
+    
+    // Buat mapping order_code → order data untuk akses cepat
+    const orderMap = {};
+    _queueOrders.forEach(o => {
+      orderMap[o.order_code] = o;
+    });
+    
+    renderAntrian(_queueOrders, orderMap);
   } catch(e) {
     showToast('Gagal memuat antrian', 'error');
   }
 }
 
-function renderAntrian(orders) {
+function renderAntrian(orders, orderMap = {}) {
   const list  = document.getElementById('queueList');
   const empty = document.getElementById('emptyQueue');
   const badge = document.getElementById('queueCount');
@@ -415,16 +484,18 @@ function renderAntrian(orders) {
     return;
   }
   empty.style.display = 'none';
-  list.innerHTML = orders.map((o, i) => `
+  list.innerHTML = orders.map((o) => {
+    const num = 'A' + String(_assignOrderNum(o.order_code)).padStart(2, '0');
+    return `
     <div class="queue-item ${o.status === 'pending' ? 'wait' : ''}">
-      <div class="queue-item-num">${queueNo(i)}</div>
+      <div class="queue-item-num">${num}</div>
       <div class="queue-item-detail">
         <div class="queue-item-code">${o.customer_name||'—'}${o.table_number ? ' • Meja ' + o.table_number : ''}</div>
         <div class="queue-item-meta">${o.order_code} • ${payIcon(o.payment_method)}</div>
       </div>
       <div class="queue-item-status">${statusBadge(o.status)}</div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function callNext() {
@@ -432,21 +503,97 @@ function callNext() {
     showToast('Tidak ada antrian', 'warn');
     return;
   }
-  const next = _queueOrders.find(o => o.status === 'diproses') || _queueOrders[0];
-  const index = Math.max(0, _queueOrders.findIndex(o => o.id === next.id));
-  const number = queueNo(index);
+  
+  // Cari order yang sedang diproses, jika tidak ada ambil yang pending pertama
+  const next = _queueOrders.find(o => o.status === 'diproses') || 
+               _queueOrders.find(o => o.status === 'pending');
+  
+  if (!next) {
+    showToast('Tidak ada order yang bisa dipanggil', 'warn');
+    return;
+  }
+  
+  // Increment counter harian
+  const count = _getQueueCounter() + 1;
+  _setQueueCounter(count);
+  const number = 'A' + String(count).padStart(2, '0');
+  
+  // Simpan mapping nomor → order data
+  _addQueueMapping(number, next);
+  
   _currentQNum = number;
   document.getElementById('currentQueue').textContent = number;
-  document.getElementById('queueOrderCode').textContent = `${next.customer_name || next.order_code}${next.table_number ? ' - Meja ' + next.table_number : ''}`;
+  document.getElementById('queueOrderCode').textContent = 
+    `${next.customer_name || next.order_code}${next.table_number ? ' - Meja ' + next.table_number : ''}`;
+  
   showToast(`Memanggil antrian ${number}`);
+  announceQueue(number, next.customer_name);
+}
+
+function callSpecific() {
+  const input = document.getElementById('callSpecificInput');
+  const n = parseInt(input.value);
+  if (!n || n < 1) { showToast('Masukkan nomor antrian yang valid', 'warn'); return; }
+  
+  const number = 'A' + String(n).padStart(2, '0');
+  
+  // Cari order berdasarkan nomor urutan di daftar
+  const order = _queueOrders[n - 1];
+  
+  if (!order) {
+    showToast('Nomor antrian tidak ditemukan', 'warn');
+    return;
+  }
+  
+  const customerName = order.customer_name || '';
+  
+  // Update counter jika perlu
+  _setQueueCounter(Math.max(_getQueueCounter(), n));
+  
+  // Simpan mapping
+  _addQueueMapping(number, order);
+  
+  _currentQNum = number;
+  document.getElementById('currentQueue').textContent = number;
+  document.getElementById('queueOrderCode').textContent = customerName
+    ? `${customerName}${order?.table_number ? ' - Meja ' + order.table_number : ''}`
+    : `Antrian ${number}`;
+  
+  showToast(`Memanggil antrian ${number}`);
+  announceQueue(number, customerName);
+  input.value = '';
 }
 
 function resetQueue() {
-  if (!confirm('Reset semua nomor antrian?')) return;
+  if (!confirm('Reset semua nomor antrian? Nomor akan mulai dari 1 lagi besok.')) return;
+  _setQueueCounter(0);
+  localStorage.removeItem(_QUEUE_KEY);
+  localStorage.removeItem(_QUEUE_MAP_KEY);
+  localStorage.removeItem(_ORDER_NUM_KEY);
   _currentQNum = null;
   document.getElementById('currentQueue').textContent = '—';
   document.getElementById('queueOrderCode').textContent = 'Belum ada panggilan';
   showToast('Antrian direset');
+}
+
+function announceQueue(number, customerName) {
+  if (!window.speechSynthesis) return;
+  
+  const digits = number.slice(1);
+  const spoken = number[0] + ' ' + digits.split('').join(' ');
+  const namePart = customerName ? `, atas nama ${customerName},` : ',';
+  const text = `Nomor antrian ${spoken}${namePart} silakan mengambil pesanan`;
+  
+  // Batalkan pengumuman sebelumnya
+  window.speechSynthesis.cancel();
+  
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'id-ID';
+  utter.rate = 0.9;
+  utter.pitch = 1;
+  utter.volume = 1;
+  
+  window.speechSynthesis.speak(utter);
 }
 
 /* ═══════════════════════════════

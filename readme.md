@@ -1,70 +1,94 @@
-## 🌿 Struktur Branch
+# Berkesan ☕
 
-```
-main                    ← Kode FINAL yang sudah stabil
-│
-└── develop             ← Branch utama. Semua fitur di-merge kesini
-    │
-    ├── feature/fe-biolink          → Frontend : index.html bio instagram
-    ├── feature/fe-website          → Frontend : website.html + menu.html
-    ├── feature/fe-order            → Frontend : order.html + keranjang
-    ├── feature/fe-reservasi        → Frontend : reservasi.html
-    ├── feature/fe-admin            → Frontend : admin dashboard UI
-    │
-    ├── feature/be-config           → Backend : config, helper, struktur API
-    ├── feature/be-order            → Backend : api/order + api/admin
-    ├── feature/be-menu             → Backend : api/menu
-    ├── feature/be-reservasi        → Backend : api/reservasi
-    │
-    ├── feature/db-schema           → Database: schema.sql + ERD
-    ├── feature/db-dummy            → Database: dummy_data.sql
-    │
-    └── feature/docs-readme         → Dokumentasi: README + laporan
-```
-
-### Aturan Branch (WAJIB DIIKUTI SEMUA):
-
-| Aturan | Penjelasan |
-|--------|-----------|
-| ❌ Dilarang push ke `main` | Main hanya di-merge |
-| ❌ Dilarang push langsung ke `develop` | Semua harus lewat Pull Request |
-| ✅ Selalu `git pull origin develop` sebelum mulai | Supaya kode selalu up-to-date |
-| ✅ 1 branch = 1 fitur | Jangan campur-campur fitur dalam 1 branch |
-| ✅ Commit message harus jelas | Format: `feat:`, `fix:`, `docs:`, `style:` |
+Sistem Point of Sale (POS) berbasis web untuk kedai kopi. Dibangun dengan Node.js + Express di backend dan HTML/CSS/JS vanilla di frontend, dengan MySQL sebagai database.
 
 ---
 
-## 📝 Format Commit Message
+## Fitur
 
-```bash
-# Format: <type>: <deskripsi singkat>
-
-feat: tambah halaman menu dengan filter kategori
-fix: perbaiki bug cart tidak reset setelah order
-style: rapikan padding navbar mobile
-docs: update README cara install project
-db: tambah dummy data untuk tabel menus
-```
+- Halaman menu & order untuk pelanggan
+- Panel kasir untuk memproses transaksi
+- Dashboard admin untuk manajemen menu, meja, stok, dan laporan
+- Autentikasi berbasis JWT
+- Pembayaran cash & QRIS
 
 ---
 
-## 🔄 Alur Kerja Harian (Wajib Hafal)
+## Tech Stack
 
+| Layer | Teknologi |
+|-------|-----------|
+| Backend | Node.js, Express |
+| Database | MySQL |
+| Auth | JWT, bcryptjs |
+| Frontend | HTML, CSS, JavaScript (Vanilla) |
+
+---
+
+## Cara Install & Menjalankan
+
+### Prasyarat
+- Node.js v18+
+- MySQL
+
+### 1. Clone repository
 ```bash
-# 1. Sebelum mulai kerja — selalu update dulu
-git checkout develop
-git pull origin develop
-
-# 2. Pindah ke branch
-git checkout feature/nama-branch-kamu
-git merge develop          ← ambil update terbaru dari develop
-
-# 3. Ngoding... ngoding... ngoding...
-
-# 4. Setelah selesai
-git add .
-git commit -m "feat: deskripsi apa yang kamu buat"
-git push origin feature/nama-branch-kamu
-
-# 5. Buka GitHub → buat Pull Request ke develop
+git clone https://github.com/username/berkesan.git
+cd berkesan
 ```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Setup database
+```bash
+# Buat database dan tabel
+mysql -u root -p < database/schema.sql
+```
+
+### 4. Konfigurasi environment
+```bash
+cp .env.example .env
+```
+Edit file `.env`:
+```
+PORT=3000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=password_kamu
+DB_NAME=berkesan
+JWT_SECRET=isi_dengan_string_acak
+```
+
+### 5. Jalankan server
+```bash
+npm start
+```
+
+Buka browser ke `http://localhost:3000`
+
+---
+
+## Struktur Halaman
+
+| URL | Keterangan |
+|-----|------------|
+| `/` | Halaman utama |
+| `/order` | Halaman order pelanggan |
+| `/about` | Tentang kami |
+| `/login` | Login admin & kasir |
+| `/kasir` | Panel kasir |
+| `/admin` | Dashboard admin |
+
+---
+
+## Tim Pengembang
+
+| Nama | Role |
+|------|------|
+| _(isi nama)_ | Fullstack / Project Lead |
+| _(isi nama)_ | Frontend Developer |
+| _(isi nama)_ | Backend Developer |
+| _(isi nama)_ | Database & Dokumentasi |

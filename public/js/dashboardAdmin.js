@@ -10,7 +10,7 @@
   /* ═══════════════════════════════════════════
        CONFIG
     ═══════════════════════════════════════════ */
-    const API_BASE = '/api/dashboard';
+    const API_BASE = `${BACKEND_URL}/api/dashboard`;
     const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
     /* ═══════════════════════════════════════════
@@ -124,6 +124,7 @@
        FETCH WRAPPER
     ═══════════════════════════════════════════ */
     async function apiFetch(url, options = {}) {
+      options.headers = { 'ngrok-skip-browser-warning': 'true', ...options.headers };
       const res = await fetch(url, options);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
