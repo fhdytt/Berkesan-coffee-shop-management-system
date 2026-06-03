@@ -1,43 +1,43 @@
 const db = require("../config/database");
 
 async function findOrder(idOrCode) {
-  const [[order]] = await db.query(
+  const result = await db.query(
     `SELECT o.*, t.table_number
      FROM orders o
      LEFT JOIN tables t ON t.id = o.table_id
-     WHERE o.id = ? OR o.order_code = ?
+     WHERE o.id = $1 OR o.order_code = $2
      LIMIT 1`,
-    [idOrCode, idOrCode]
+    [Number(idOrCode) || 0, idOrCode]
   );
-  return order;
+  return result.rows[0];
 }
 
 async function getItems(orderId) {
-  const [items] = await db.query(
-    "SELECT id, order_id, menu_item_id, menu_name, quantity, price, subtotal FROM order_items WHERE order_id = ? ORDER BY id ASC",
+  const result = await db.query(
+    "SELECT id, order_id, menu_item_id, menu_name, quantity, price, subtotal FROM order_items WHERE order_id = $1 ORDER BY id ASC",
     [orderId]
   );
-  return items;
+  return result.rows;
 }
 
 exports.getOrders = async (req, res) => {
   try {
-    const [orders] = await db.query(`
+    const orders = await db.query(`
       SELECT o.*, t.table_number
       FROM orders o
       LEFT JOIN tables t ON t.id = o.table_id
-      WHERE DATE(o.created_at) = CURDATE()
+      WHERE o.created_at::date = CURRENT_DATE
       ORDER BY o.created_at DESC
     `);
 
-    if (!orders.length) return res.json({ success: true, data: { orders: [] } });
+    if (!orders.rows.length) return res.json({ success: true, data: { orders: [] } });
 
-    const ids = orders.map((order) => order.id);
-    const [items] = await db.query(
-      `SELECT * FROM order_items WHERE order_id IN (${ids.map(() => "?").join(",")}) ORDER BY id ASC`,
-      ids
+    const ids = orders.rows.map((o) => o.id);
+    const items = await db.query(
+      `SELECT * FROM order_items WHERE order_id = ANY($1) ORDER BY id ASC`,
+      [ids]
     );
-    const grouped = items.reduce((acc, item) => {
+    const grouped = items.rows.reduce((acc, item) => {
       acc[item.order_id] = acc[item.order_id] || [];
       acc[item.order_id].push(item);
       return acc;
@@ -46,7 +46,7 @@ exports.getOrders = async (req, res) => {
     res.json({
       success: true,
       data: {
-        orders: orders.map((order) => ({ ...order, items: grouped[order.id] || [] })),
+        orders: orders.rows.map((order) => ({ ...order, items: grouped[order.id] || [] })),
       },
     });
   } catch (err) {
@@ -93,11 +93,12 @@ exports.updateOrderStatus = async (req, res) => {
 
     await db.query(
       `UPDATE orders
-       SET status = ?,
-           paid_amount = IF(? > 0, ?, paid_amount),
-           change_amount = IF(? > 0, ?, change_amount)
-       WHERE id = ?`,
-      [status, paid, paid, paid, change, order.id]
+       SET status = $1,
+           paid_amount = CASE WHEN $2 > 0 THEN $2 ELSE paid_amount END,
+           change_amount = CASE WHEN $3 > 0 THEN $4 ELSE change_amount END,
+           updated_at = NOW()
+       WHERE id = $5`,
+      [status, paid, paid, change, order.id]
     );
 
     res.json({ success: true, message: "Status order diperbarui" });
@@ -108,15 +109,14 @@ exports.updateOrderStatus = async (req, res) => {
 
 exports.getQueue = async (req, res) => {
   try {
-    const [orders] = await db.query(`
+    const result = await db.query(`
       SELECT o.*, t.table_number
       FROM orders o
       LEFT JOIN tables t ON t.id = o.table_id
-      WHERE DATE(o.created_at) = CURDATE()
-        AND o.status IN ('diproses')
+      WHERE o.created_at::date = CURRENT_DATE AND o.status IN ('diproses')
       ORDER BY o.updated_at ASC
     `);
-    res.json({ success: true, data: { orders } });
+    res.json({ success: true, data: { orders: result.rows } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -124,17 +124,16 @@ exports.getQueue = async (req, res) => {
 
 exports.getHistory = async (req, res) => {
   try {
-    const [orders] = await db.query(`
+    const result = await db.query(`
       SELECT o.*, t.table_number, COUNT(oi.id) AS item_count
       FROM orders o
       LEFT JOIN tables t ON t.id = o.table_id
       LEFT JOIN order_items oi ON oi.order_id = o.id
-      WHERE DATE(o.created_at) = CURDATE()
-        AND o.status IN ('selesai','dibatalkan')
-      GROUP BY o.id
+      WHERE o.created_at::date = CURRENT_DATE AND o.status IN ('selesai','dibatalkan')
+      GROUP BY o.id, t.table_number
       ORDER BY o.updated_at DESC
     `);
-    res.json({ success: true, data: { orders } });
+    res.json({ success: true, data: { orders: result.rows } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

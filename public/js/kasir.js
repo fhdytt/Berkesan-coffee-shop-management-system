@@ -1,3 +1,14 @@
+/* ── Auth Guard ── */
+(function () {
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!token || !user || !['kasir', 'admin', 'dev'].includes(user.role)) {
+    window.location.replace('/login');
+  } else {
+    document.body.style.display = '';
+  }
+})();
+
 /* ═══════════════════════════════
    CONFIG
 ═══════════════════════════════ */

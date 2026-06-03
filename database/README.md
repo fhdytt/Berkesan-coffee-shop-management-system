@@ -1,148 +1,129 @@
 # Database — Berkesan
 
-Database menggunakan **MySQL** dengan nama `berkesan`.
+Database menggunakan **PostgreSQL** (di-host di Railway).
 
-File skema: `schema.sql`
-File migrasi: `migration_pos_flow.sql`
-File data contoh: `dummy_data.sql`
+| File | Keterangan |
+|------|------------|
+| `schema.postgres.sql` | DDL utama — jalankan ini untuk inisialisasi |
+| `schema.sql` | Schema MySQL lama (referensi saja, tidak dipakai) |
+| `migration_pos_flow.sql` | Migrasi alur POS lama (referensi) |
+| `dummy_data.sql` | Data awal minimal untuk testing |
+| `dummy_data_test.sql` | Dataset lengkap untuk testing |
+| `update_images.sql` | Script update URL gambar menu |
+
+---
+
+## Inisialisasi Database
+
+```bash
+psql $DATABASE_URL -f database/schema.postgres.sql
+```
+
+Atau via Railway CLI:
+
+```bash
+railway run psql $DATABASE_URL -f database/schema.postgres.sql
+```
 
 ---
 
 ## Tabel
 
 ### `users`
-Menyimpan data pengguna sistem (admin dan kasir).
+Pengguna sistem (admin dan kasir).
 
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
-| id | INT PK | Auto increment |
-| username | VARCHAR(100) | Unik, untuk login |
+| id | SERIAL PK | |
+| username | VARCHAR(100) | Unik |
 | password | VARCHAR(255) | Hash bcrypt |
 | name | VARCHAR(150) | Nama lengkap |
-| role | ENUM | `admin`, `kasir`, `dev` |
-| created_at | TIMESTAMP | |
-| updated_at | TIMESTAMP | Auto update |
-
----
+| role | VARCHAR(10) | `admin`, `kasir`, `dev` |
+| created_at | TIMESTAMPTZ | |
+| updated_at | TIMESTAMPTZ | |
 
 ### `kategori`
 Kategori menu (contoh: Coffee, Non Coffee, Signature).
 
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
-| id | INT PK | Auto increment |
+| id | SERIAL PK | |
 | name | VARCHAR(100) | Unik |
-| created_at | TIMESTAMP | |
-
----
+| created_at | TIMESTAMPTZ | |
 
 ### `menu_items`
 Item menu yang dijual.
 
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
-| id | INT PK | Auto increment |
-| kategori_id | INT FK | Relasi ke `kategori.id` |
-| name | VARCHAR(150) | Nama menu |
-| price | DECIMAL(10,2) | Harga |
-| image_url | LONGTEXT | URL atau base64 gambar |
-| stock | INT | Stok tersedia |
-| is_available | BOOLEAN | Tampil di menu atau tidak |
-| created_at | TIMESTAMP | |
-| updated_at | TIMESTAMP | Auto update |
-
----
+| id | SERIAL PK | |
+| kategori_id | INTEGER FK | → `kategori.id` |
+| name | VARCHAR(150) | |
+| price | NUMERIC(10,2) | |
+| image_url | TEXT | |
+| stock | INTEGER | |
+| is_available | BOOLEAN | |
+| created_at | TIMESTAMPTZ | |
+| updated_at | TIMESTAMPTZ | |
 
 ### `tables`
 Data meja di kedai.
 
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
-| id | INT PK | Auto increment |
-| table_number | VARCHAR(20) | Nomor meja, unik |
-| qr_code | LONGTEXT | Data QR code meja |
-| is_active | BOOLEAN | Meja aktif atau tidak |
-| created_at | TIMESTAMP | |
-
----
+| id | SERIAL PK | |
+| table_number | VARCHAR(20) | Unik |
+| qr_code | TEXT | |
+| is_active | BOOLEAN | |
+| created_at | TIMESTAMPTZ | |
 
 ### `orders`
 Transaksi order pelanggan.
 
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
-| id | INT PK | Auto increment |
-| order_code | VARCHAR(50) | Kode unik order (contoh: `ORD-260520-...`) |
-| user_id | INT FK | Relasi ke `users.id` (nullable) |
-| table_id | INT FK | Relasi ke `tables.id` (nullable) |
-| customer_name | VARCHAR(150) | Nama pelanggan |
-| total_price | DECIMAL(12,2) | Total harga |
-| payment_method | ENUM | `cash` atau `qris` |
-| paid_amount | DECIMAL(12,2) | Jumlah dibayar |
-| change_amount | DECIMAL(12,2) | Kembalian |
-| status | ENUM | `pending`, `diproses`, `selesai`, `dibatalkan` |
-| notes | TEXT | Catatan order |
-| created_at | TIMESTAMP | |
-| updated_at | TIMESTAMP | Auto update |
-
----
+| id | SERIAL PK | |
+| order_code | VARCHAR(50) | Unik, format `ORD-YYMMDD-HHMMSSxxx` |
+| user_id | INTEGER FK | → `users.id` (nullable) |
+| table_id | INTEGER FK | → `tables.id` (nullable) |
+| customer_name | VARCHAR(150) | |
+| total_price | NUMERIC(12,2) | |
+| payment_method | VARCHAR(10) | `cash` atau `qris` |
+| paid_amount | NUMERIC(12,2) | |
+| change_amount | NUMERIC(12,2) | |
+| status | VARCHAR(20) | `pending`, `diproses`, `selesai`, `dibatalkan` |
+| notes | TEXT | |
+| created_at | TIMESTAMPTZ | |
+| updated_at | TIMESTAMPTZ | |
 
 ### `order_items`
 Detail item dalam setiap order.
 
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
-| id | INT PK | Auto increment |
-| order_id | INT FK | Relasi ke `orders.id` (CASCADE delete) |
-| menu_item_id | INT FK | Relasi ke `menu_items.id` |
-| menu_name | VARCHAR(150) | Nama menu saat order (snapshot) |
-| quantity | INT | Jumlah item |
-| price | DECIMAL(10,2) | Harga satuan saat order (snapshot) |
-| subtotal | DECIMAL(12,2) | `quantity × price` (generated column) |
+| id | SERIAL PK | |
+| order_id | INTEGER FK | → `orders.id` (CASCADE delete) |
+| menu_item_id | INTEGER FK | → `menu_items.id` (RESTRICT delete) |
+| menu_name | VARCHAR(150) | Snapshot nama menu saat order |
+| quantity | INTEGER | |
+| price | NUMERIC(10,2) | Snapshot harga saat order |
+| subtotal | NUMERIC(12,2) | Generated: `quantity × price` |
 
 ---
 
-## Relasi Antar Tabel
+## Relasi
 
 ```
-kategori
-  └── menu_items (kategori_id → kategori.id)
-
-users
-  └── orders (user_id → users.id, SET NULL on delete)
-
-tables
-  └── orders (table_id → tables.id)
-
-orders
-  └── order_items (order_id → orders.id, CASCADE delete)
-
-menu_items
-  └── order_items (menu_item_id → menu_items.id, RESTRICT delete)
-```
-
-### Diagram ERD (teks)
-
-```
-┌──────────┐       ┌────────────┐       ┌─────────────┐
-│ kategori │ 1───* │ menu_items │ 1───* │ order_items │
-└──────────┘       └────────────┘       └─────────────┘
-                                               │ *
-                                               │
-┌────────┐         ┌──────────┐ 1─────────────┘
-│ users  │ 1───*   │  orders  │
-└────────┘         └──────────┘
-                        │ *
-                        │
-                   ┌──────────┐
-                   │  tables  │
-                   └──────────┘
+kategori 1──* menu_items 1──* order_items
+                                   │
+users 1──* orders *────────────────┘
+tables 1──* orders
 ```
 
 ---
 
-## Catatan Penting
+## Catatan
 
-- `menu_name` dan `price` di `order_items` disimpan sebagai **snapshot** — artinya jika harga menu diubah di kemudian hari, data transaksi lama tetap akurat.
-- `menu_items` tidak bisa dihapus jika sudah pernah masuk `order_items` (RESTRICT). Sebagai gantinya, menu akan di-soft delete (`is_available = false`).
+- `menu_name` dan `price` di `order_items` disimpan sebagai **snapshot** — data transaksi lama tetap akurat meski harga menu diubah.
+- Menu tidak bisa dihapus jika sudah pernah masuk transaksi (RESTRICT). Sebagai gantinya di-soft delete (`is_available = false`).
 - `order_items` otomatis terhapus jika order induknya dihapus (CASCADE).

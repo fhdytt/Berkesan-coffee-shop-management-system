@@ -13,15 +13,15 @@ function makeOrderCode() {
 }
 
 async function getOrderByIdOrCode(idOrCode) {
-  const [[order]] = await db.query(
+  const result = await db.query(
     `SELECT o.*, t.table_number
      FROM orders o
      LEFT JOIN tables t ON t.id = o.table_id
-     WHERE o.id = ? OR o.order_code = ?
+     WHERE o.id = $1 OR o.order_code = $2
      LIMIT 1`,
-    [idOrCode, idOrCode]
+    [Number(idOrCode) || 0, idOrCode]
   );
-  return order;
+  return result.rows[0];
 }
 
 exports.getOrders = async (req, res) => {
@@ -29,42 +29,35 @@ exports.getOrders = async (req, res) => {
     const { status, today } = req.query;
     const params = [];
     let where = "WHERE 1=1";
+    let idx = 1;
 
     if (status && status !== "all") {
-      where += " AND o.status = ?";
+      where += ` AND o.status = $${idx++}`;
       params.push(status);
     }
     if (today === "true") {
-      where += " AND DATE(o.created_at) = CURDATE()";
+      where += ` AND o.created_at::date = CURRENT_DATE`;
     }
 
-    const [orders] = await db.query(
+    const result = await db.query(
       `SELECT o.*, t.table_number, COUNT(oi.id) AS item_count
        FROM orders o
        LEFT JOIN tables t ON t.id = o.table_id
        LEFT JOIN order_items oi ON oi.order_id = o.id
        ${where}
-       GROUP BY o.id
+       GROUP BY o.id, t.table_number
        ORDER BY o.created_at DESC`,
       params
     );
 
-    res.json({
-      success: true,
-      message: "Semua order",
-      data: { orders },
-      orders,
-    });
+    res.json({ success: true, data: { orders: result.rows } });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
 exports.createOrder = async (req, res) => {
-  const conn = await db.getConnection();
+  const client = await db.connect();
   try {
     const {
       table_number,
@@ -84,19 +77,19 @@ exports.createOrder = async (req, res) => {
 
     let resolvedTableId = table_id || null;
     if (!resolvedTableId && table_number) {
-      const [[table]] = await conn.query(
-        "SELECT id FROM tables WHERE table_number = ? AND is_active = TRUE LIMIT 1",
+      const tbl = await client.query(
+        "SELECT id FROM tables WHERE table_number = $1 AND is_active = TRUE LIMIT 1",
         [table_number]
       );
-      if (!table) {
+      if (!tbl.rows[0]) {
         return res.status(400).json({ success: false, message: "Nomor meja tidak ditemukan atau nonaktif" });
       }
-      resolvedTableId = table.id;
+      resolvedTableId = tbl.rows[0].id;
     }
 
-    await conn.beginTransaction();
+    await client.query("BEGIN");
 
-    const ids = items.map((item) => Number(item.menu_item_id || item.id)).filter(Boolean);
+    const ids = [...new Set(items.map((item) => Number(item.menu_item_id || item.id)).filter(Boolean))];
     const qtyById = new Map();
     items.forEach((item) => {
       const id = Number(item.menu_item_id || item.id);
@@ -105,23 +98,22 @@ exports.createOrder = async (req, res) => {
     });
 
     if (ids.length === 0) {
-      await conn.rollback();
+      await client.query("ROLLBACK");
       return res.status(400).json({ success: false, message: "Item pesanan tidak valid" });
     }
 
-    const placeholders = [...new Set(ids)].map(() => "?").join(",");
-    const [menus] = await conn.query(
-      `SELECT id, name, price, stock, is_available FROM menu_items WHERE id IN (${placeholders})`,
-      [...new Set(ids)]
+    const menus = await client.query(
+      `SELECT id, name, price, stock, is_available FROM menu_items WHERE id = ANY($1)`,
+      [ids]
     );
 
-    if (menus.length !== new Set(ids).size) {
-      await conn.rollback();
+    if (menus.rows.length !== ids.length) {
+      await client.query("ROLLBACK");
       return res.status(400).json({ success: false, message: "Sebagian menu tidak ditemukan" });
     }
 
     let total = 0;
-    const orderItems = menus.map((menu) => {
+    const orderItems = menus.rows.map((menu) => {
       if (!menu.is_available) throw new Error(`${menu.name} sedang tidak tersedia`);
       const quantity = qtyById.get(menu.id);
       if (Number(menu.stock) < quantity) throw new Error(`Stok ${menu.name} tidak cukup`);
@@ -131,26 +123,26 @@ exports.createOrder = async (req, res) => {
     });
 
     const orderCode = makeOrderCode();
-    const [orderResult] = await conn.query(
+    const orderResult = await client.query(
       `INSERT INTO orders (order_code, table_id, customer_name, total_price, payment_method, status, notes)
-       VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
+       VALUES ($1, $2, $3, $4, $5, 'pending', $6) RETURNING id`,
       [orderCode, resolvedTableId, customer_name, total, payment_method, notes]
     );
 
-    const orderId = orderResult.insertId;
+    const orderId = orderResult.rows[0].id;
     for (const item of orderItems) {
-      await conn.query(
+      await client.query(
         `INSERT INTO order_items (order_id, menu_item_id, menu_name, quantity, price)
-         VALUES (?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5)`,
         [orderId, item.id, item.name, item.quantity, item.price]
       );
-      await conn.query(
-        "UPDATE menu_items SET stock = GREATEST(stock - ?, 0) WHERE id = ?",
+      await client.query(
+        "UPDATE menu_items SET stock = GREATEST(stock - $1, 0), updated_at=NOW() WHERE id = $2",
         [item.quantity, item.id]
       );
     }
 
-    await conn.commit();
+    await client.query("COMMIT");
 
     res.json({
       success: true,
@@ -168,13 +160,10 @@ exports.createOrder = async (req, res) => {
       },
     });
   } catch (err) {
-    try { await conn.rollback(); } catch (_) {}
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    try { await client.query("ROLLBACK"); } catch (_) {}
+    res.status(500).json({ success: false, message: err.message });
   } finally {
-    conn.release();
+    client.release();
   }
 };
 
@@ -182,9 +171,8 @@ exports.getOrderDetail = async (req, res) => {
   try {
     const order = await getOrderByIdOrCode(req.params.id);
     if (!order) return res.status(404).json({ success: false, message: "Order tidak ditemukan" });
-
-    const [items] = await db.query("SELECT * FROM order_items WHERE order_id = ?", [order.id]);
-    res.json({ success: true, data: { order, items }, order, items });
+    const items = await db.query("SELECT * FROM order_items WHERE order_id = $1", [order.id]);
+    res.json({ success: true, data: { order, items: items.rows } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -204,8 +192,13 @@ exports.updateOrderStatus = async (req, res) => {
     const change = paid > 0 ? Math.max(0, paid - Number(order.total_price)) : Number(order.change_amount || 0);
 
     await db.query(
-      "UPDATE orders SET status = ?, paid_amount = IF(? > 0, ?, paid_amount), change_amount = IF(? > 0, ?, change_amount) WHERE id = ?",
-      [status, paid, paid, paid, change, order.id]
+      `UPDATE orders
+       SET status = $1,
+           paid_amount = CASE WHEN $2 > 0 THEN $2 ELSE paid_amount END,
+           change_amount = CASE WHEN $3 > 0 THEN $4 ELSE change_amount END,
+           updated_at = NOW()
+       WHERE id = $5`,
+      [status, paid, paid, change, order.id]
     );
 
     res.json({ success: true, message: "Status order diperbarui" });

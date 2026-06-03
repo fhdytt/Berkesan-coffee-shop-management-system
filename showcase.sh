@@ -1,8 +1,8 @@
 #!/bin/bash
 
-BACKEND_DIR="$HOME/berkesan-backend"
-FRONTEND_DIR="$HOME/berkesan-frontend"
-NGROK_DOMAIN="contented-chewable-lemon.ngrok-free.dev"
+BACKEND_DIR="/var/www/berkesan"
+FRONTEND_DIR="/var/www/berkesan"
+NGROK_DOMAIN="https://luci-shiftless-overproficiently.ngrok-free.dev"
 NGROK_PORT=3000
 
 # 1. Jalankan backend

@@ -17,14 +17,14 @@ app.use(cors({
   credentials: true,
 }));
 
-// Bypass ngrok browser warning
-app.use((req, res, next) => {
-  res.setHeader("ngrok-skip-browser-warning", "true");
-  next();
-});
-
 // Rate limiting sederhana: max 60 request/menit per IP
 const rateMap = new Map();
+setInterval(() => {
+  const cutoff = Date.now() - 60000;
+  for (const [ip, entry] of rateMap) {
+    if (entry.start < cutoff) rateMap.delete(ip);
+  }
+}, 60000);
 app.use((req, res, next) => {
   const ip = req.ip;
   const now = Date.now();
@@ -43,7 +43,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/menu", menuRouter);
 app.use("/api/order", orderRouter);
-app.use("/api/orders", orderRouter);
 app.use("/api/kasir", kasirRouter);
 
 app.get("/", (req, res) => res.json({ status: "ok", message: "Berkesan API" }));

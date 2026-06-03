@@ -1,8 +1,9 @@
-const BACKEND_URL = "https://luci-shiftless-overproficiently.ngrok-free.dev";
+// Ganti dengan URL Railway backend setelah deploy
+// Contoh: https://berkesan-production.up.railway.app
+const BACKEND_URL = "https://berkesan-production.up.railway.app";
 
 const DEFAULT_HEADERS = {
   "Content-Type": "application/json",
-  "ngrok-skip-browser-warning": "true",
 };
 
 async function apiFetch(path, options = {}) {
