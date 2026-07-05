@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS kategori (
     created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. MENU ITEMS (Tanpa stock!)
+-- 3. MENU ITEMS 
 CREATE TABLE IF NOT EXISTS menu_items (
     id              SERIAL PRIMARY KEY,
     kategori_id     INTEGER NOT NULL REFERENCES kategori(id),
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS tables (
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. ORDERS (REVISED)
+-- 5. ORDERS 
 CREATE TABLE IF NOT EXISTS orders (
     id                      SERIAL PRIMARY KEY,
     order_code              VARCHAR(50) UNIQUE NOT NULL,
@@ -85,8 +85,6 @@ CREATE TABLE IF NOT EXISTS orders (
     payment_url             TEXT,                 -- snap_token url / invoice_url
     expired_at              TIMESTAMPTZ,          -- kapan link/QR pembayaran expired
     paid_at                 TIMESTAMPTZ,          -- kapan konfirmasi paid diterima
-
-    -- nomor antrian untuk display dapur/kasir (ex: A01, A02, ...)
     queue_number            VARCHAR(10),
 
     notes                   TEXT,

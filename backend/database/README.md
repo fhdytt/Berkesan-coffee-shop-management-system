@@ -6,8 +6,6 @@ PostgreSQL database for Berkesan Coffee POS system.
 |------|-------------|
 | `schema.postgres.sql` | Main DDL — run this to initialize the database |
 | `dummy_data.sql` | Sample data for development & testing |
-| `migration_pos_flow.sql` | POS flow migration (reference only) |
-| `update_images.sql` | Script to update menu image URLs |
 
 ---
 

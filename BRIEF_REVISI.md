@@ -3,7 +3,7 @@
 **Tanggal:** 4 Juli 2026  
 **Project:** Berkesan Coffee Shop — Point of Sale & Ordering System  
 **Stack:** Express.js · PostgreSQL · Tailwind CSS (Vanilla JS)  
-**Tujuan saat ini:** Integrasi Payment Gateway (Midtrans / Xendit)
+**Tujuan saat ini:** Integrasi Payment Gateway
 
 ---
 
@@ -274,7 +274,7 @@ Data dummy order yang sudah ada menggunakan `status` lama tanpa mengisi `payment
 
 ---
 
-## Urutan Pengerjaan yang Disarankan
+## Urutan Pengerjaan
 
 ```
 Tahap 1 — Perbaikan Cepat (bisa dikerjakan paralel)
