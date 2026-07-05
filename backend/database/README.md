@@ -1,87 +1,87 @@
 # Database — Berkesan
 
-Database menggunakan **PostgreSQL** (di-host di Railway).
+PostgreSQL database for Berkesan Coffee POS system.
 
-| File | Keterangan |
-|------|------------|
-| `schema.postgres.sql` | DDL utama — jalankan ini untuk inisialisasi |
-| `dummy_data.sql` | Data awal minimal untuk testing |
-| `migration_pos_flow.sql` | Migrasi alur POS lama (referensi) |
-| `dummy_data.sql` | Data awal minimal untuk testing |
-| `update_images.sql` | Script update URL gambar menu |
+| File | Description |
+|------|-------------|
+| `schema.postgres.sql` | Main DDL — run this to initialize the database |
+| `dummy_data.sql` | Sample data for development & testing |
+| `migration_pos_flow.sql` | POS flow migration (reference only) |
+| `update_images.sql` | Script to update menu image URLs |
 
 ---
 
-## Inisialisasi Database
+## Initialization
 
 ```bash
-psql $DATABASE_URL -f database/schema.postgres.sql
+psql -U postgres -c "CREATE DATABASE berkesan;"
+psql -U postgres -d berkesan -f backend/database/schema.postgres.sql
+psql -U postgres -d berkesan -f backend/database/dummy_data.sql
 ```
 
 ---
 
-## Tabel
+## Tables
 
 ### `users`
-Pengguna sistem (admin dan kasir).
+System users (admin and kasir).
 
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
+| Column | Type | Notes |
+|--------|------|-------|
 | id | SERIAL PK | |
-| username | VARCHAR(100) | Unik |
-| password | VARCHAR(255) | Hash bcrypt |
-| name | VARCHAR(150) | Nama lengkap |
+| username | VARCHAR(100) | Unique |
+| password | VARCHAR(255) | bcrypt hash |
+| name | VARCHAR(150) | Full name |
 | role | VARCHAR(10) | `admin`, `kasir`, `dev` |
 | created_at | TIMESTAMPTZ | |
 | updated_at | TIMESTAMPTZ | |
 
 ### `kategori`
-Kategori menu (contoh: Coffee, Non Coffee, Signature).
+Menu categories (e.g. Coffee, Non Coffee, Signature).
 
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
+| Column | Type | Notes |
+|--------|------|-------|
 | id | SERIAL PK | |
-| name | VARCHAR(100) | Unik |
+| name | VARCHAR(100) | Unique |
 | created_at | TIMESTAMPTZ | |
 
 ### `menu_items`
-Item menu yang dijual.
+Menu items available for order.
 
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
+| Column | Type | Notes |
+|--------|------|-------|
 | id | SERIAL PK | |
 | kategori_id | INTEGER FK | → `kategori.id` |
 | name | VARCHAR(150) | |
 | price | NUMERIC(10,2) | |
 | image_url | TEXT | |
-| stock | INTEGER | |
 | is_available | BOOLEAN | |
 | created_at | TIMESTAMPTZ | |
 | updated_at | TIMESTAMPTZ | |
 
 ### `tables`
-Data meja di kedai.
+Physical tables in the coffee shop.
 
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
+| Column | Type | Notes |
+|--------|------|-------|
 | id | SERIAL PK | |
-| table_number | VARCHAR(20) | Unik |
-| qr_code | TEXT | |
+| table_number | VARCHAR(20) | Unique |
+| qr_code | TEXT | QR code data URL |
 | is_active | BOOLEAN | |
 | created_at | TIMESTAMPTZ | |
 
 ### `orders`
-Transaksi order pelanggan.
+Customer order transactions.
 
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
+| Column | Type | Notes |
+|--------|------|-------|
 | id | SERIAL PK | |
-| order_code | VARCHAR(50) | Unik, format `ORD-YYMMDD-HHMMSSxxx` |
+| order_code | VARCHAR(50) | Unique, format `ORD-YYMMDD-HHMMSSxxx` |
 | user_id | INTEGER FK | → `users.id` (nullable) |
 | table_id | INTEGER FK | → `tables.id` (nullable) |
 | customer_name | VARCHAR(150) | |
 | total_price | NUMERIC(12,2) | |
-| payment_method | VARCHAR(10) | `cash` atau `qris` |
+| payment_method | VARCHAR(10) | `cash` or `qris` |
 | paid_amount | NUMERIC(12,2) | |
 | change_amount | NUMERIC(12,2) | |
 | status | VARCHAR(20) | `pending`, `diproses`, `selesai`, `dibatalkan` |
@@ -90,21 +90,21 @@ Transaksi order pelanggan.
 | updated_at | TIMESTAMPTZ | |
 
 ### `order_items`
-Detail item dalam setiap order.
+Line items for each order.
 
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
+| Column | Type | Notes |
+|--------|------|-------|
 | id | SERIAL PK | |
 | order_id | INTEGER FK | → `orders.id` (CASCADE delete) |
 | menu_item_id | INTEGER FK | → `menu_items.id` (RESTRICT delete) |
-| menu_name | VARCHAR(150) | Snapshot nama menu saat order |
+| menu_name | VARCHAR(150) | Snapshot of name at time of order |
 | quantity | INTEGER | |
-| price | NUMERIC(10,2) | Snapshot harga saat order |
+| price | NUMERIC(10,2) | Snapshot of price at time of order |
 | subtotal | NUMERIC(12,2) | Generated: `quantity × price` |
 
 ---
 
-## Relasi
+## Relations
 
 ```
 kategori 1──* menu_items 1──* order_items
@@ -115,8 +115,8 @@ tables 1──* orders
 
 ---
 
-## Catatan
+## Notes
 
-- `menu_name` dan `price` di `order_items` disimpan sebagai **snapshot** — data transaksi lama tetap akurat meski harga menu diubah.
-- Menu tidak bisa dihapus jika sudah pernah masuk transaksi (RESTRICT). Sebagai gantinya di-soft delete (`is_available = false`).
-- `order_items` otomatis terhapus jika order induknya dihapus (CASCADE).
+- `menu_name` and `price` in `order_items` are stored as **snapshots** — historical transaction data remains accurate even if menu prices change later.
+- Menu items cannot be deleted if they have been part of a transaction (RESTRICT). Use soft delete instead (`is_available = false`).
+- `order_items` are automatically deleted when their parent order is deleted (CASCADE).

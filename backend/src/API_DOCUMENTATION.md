@@ -1,20 +1,20 @@
 # API Documentation — Berkesan
 
-Base URL produksi: `https://<nama-project>.up.railway.app/api`
-Base URL lokal: `http://localhost:3000/api`
+**Base URL (production):** `https://<your-domain>/api`  
+**Base URL (local):** `http://localhost:3000/api`
 
-Semua response menggunakan format:
+All responses use this format:
 ```json
 { "success": true, "data": {} }
-{ "success": false, "message": "pesan error" }
+{ "success": false, "message": "error description" }
 ```
 
 ---
 
-## Auth
+## Authentication
 
 ### POST `/auth/login`
-Login dan dapatkan JWT token.
+Login and get a JWT token.
 
 **Body:**
 ```json
@@ -30,39 +30,50 @@ Login dan dapatkan JWT token.
 }
 ```
 
+Include the token in subsequent requests:
+```
+Authorization: Bearer <token>
+```
+
 ---
 
 ## Menu
 
 ### GET `/menu`
-Daftar menu aktif (`is_available = true`), diurutkan per kategori.
+List active menu items (`is_available = true`), grouped by category.
 
 ### POST `/menu`
-Tambah menu baru.
+Add a new menu item.
 
 **Body:**
 ```json
-{ "name": "Kopi Susu", "kategori_id": 1, "price": 18000, "stock": 50, "is_available": true, "image_url": null }
+{
+  "name": "Kopi Susu",
+  "kategori_id": 1,
+  "price": 18000,
+  "is_available": true,
+  "image_url": null
+}
 ```
 
 ### PUT `/menu/:id`
-Update menu. Body sama seperti POST.
+Update a menu item. Same body as POST.
 
 ### DELETE `/menu/:id`
-Hapus menu. Jika sudah pernah masuk transaksi → soft delete (`is_available = false`).
+Delete a menu item. If it has existing transactions → soft delete (`is_available = false`).
 
 ---
 
 ## Order
 
 ### GET `/order`
-List order. Query params opsional: `?status=pending&today=true`
+List orders. Optional query params: `?status=pending&today=true`
 
 ### GET `/order/:id`
-Detail order berdasarkan ID atau order code.
+Get order detail by ID or order code.
 
 ### POST `/order`
-Buat order baru. Menggunakan transaksi DB — stok dikurangi atomik.
+Create a new order.
 
 **Body:**
 ```json
@@ -82,103 +93,109 @@ Buat order baru. Menggunakan transaksi DB — stok dikurangi atomik.
 {
   "success": true,
   "data": {
-    "order": { "id": 42, "order_code": "ORD-260520-143022987", "total_price": 36000, "status": "pending" },
-    "payment_code": "ORD-260520-143022987"
+    "order": {
+      "id": 42,
+      "order_code": "ORD-260520-143022987",
+      "total_price": 36000,
+      "status": "pending"
+    }
   }
 }
 ```
 
 ### PATCH `/order/:id/status`
-Update status order.
+Update order status.
 
 **Body:**
 ```json
 { "status": "diproses", "paid_amount": 50000 }
 ```
 
-Status: `pending` → `diproses` → `selesai` / `dibatalkan`
+Status flow: `pending` → `diproses` → `selesai` / `dibatalkan`
 
 ---
 
 ## Kasir
 
 ### GET `/kasir/orders`
-Semua order hari ini beserta item-nya.
+All orders for today with their items.
 
 ### GET `/kasir/orders/lookup?code=ORD-xxx`
-Cari order berdasarkan kode.
+Find an order by order code.
 
 ### GET `/kasir/orders/:id`
-Detail order dan item-nya.
+Get order detail and items.
 
 ### PATCH `/kasir/orders/:id/status`
-Update status order.
+Update order status.
 
 **Body:** `{ "status": "selesai", "paid_amount": 50000 }`
 
 ### GET `/kasir/queue`
-Antrian order dengan status `diproses` hari ini.
+Active queue — orders with status `diproses` for today.
 
 ### GET `/kasir/history`
-Order `selesai` dan `dibatalkan` hari ini.
+Completed and cancelled orders for today.
 
 ---
 
 ## Dashboard
 
-> Endpoint `/dashboard/users` memerlukan header `Authorization: Bearer <token>`.  
-> Endpoint lainnya di dashboard saat ini tidak wajib JWT (bisa disesuaikan).
+> `GET /dashboard/users`, `POST /dashboard/users`, `DELETE /dashboard/users/:id` require `Authorization: Bearer <token>`.
 
 ### GET `/dashboard/stats`
-Statistik hari ini: pendapatan, total order, produk terjual, 5 terlaris, 5 stok menipis, chart 7 hari.
+Today's statistics: revenue, total orders, products sold, top 5 products, 7-day sales chart.
 
 ### GET `/dashboard/rekap?month=05&year=2026`
-Rekap bulanan: pendapatan harian, 5 produk terlaris, ringkasan metode pembayaran, perbandingan bulan lalu.
-
-### GET `/dashboard/stok`
-Semua menu dengan stok, bergabung dengan nama kategori.
+Monthly recap: daily revenue trend, top 5 products, payment method breakdown, comparison with previous month.
 
 ### GET `/dashboard/laporan?date=2026-05-20&status=selesai&payment=cash`
-Laporan order dengan filter tanggal, status, dan metode pembayaran. Maks 100 baris.
+Transaction report with optional filters. Returns max 100 rows.
 
 ### GET `/dashboard/antrean`
-Order `pending` dan `diproses` hari ini + 20 order `selesai` terakhir.
+Today's `pending` and `diproses` orders + last 20 completed orders.
 
 ### GET `/dashboard/kategori`
-Daftar semua kategori.
+List all categories.
 
 ### POST `/dashboard/kategori`
-Tambah kategori. **Body:** `{ "name": "Signature" }`
+Add a category.
+
+**Body:** `{ "name": "Signature" }`
 
 ### GET `/dashboard/menu`
-Semua menu termasuk yang tidak aktif.
+All menu items including inactive ones.
 
 ### POST `/dashboard/menu`
-Tambah menu (alias `POST /menu`).
+Add menu item (alias for `POST /menu`).
 
 ### PUT `/dashboard/menu/:id`
-Update menu (alias `PUT /menu/:id`).
+Update menu item (alias for `PUT /menu/:id`).
 
 ### DELETE `/dashboard/menu/:id`
-Hapus/nonaktifkan menu.
+Delete/deactivate menu item.
 
 ### GET `/dashboard/meja`
-Daftar semua meja.
+List all tables.
 
 ### POST `/dashboard/meja`
-Tambah meja. **Body:** `{ "table_number": "5" }`
+Add a table.
+
+**Body:** `{ "table_number": "5" }`
 
 ### PATCH `/dashboard/meja/:id/toggle`
-Toggle aktif/nonaktif meja.
+Toggle table active/inactive status.
 
 ### DELETE `/dashboard/meja/:id`
-Hapus meja. Jika sudah pernah dipakai order → soft delete (nonaktifkan).
+Delete a table. If it has existing orders → soft delete (deactivate).
 
-### GET `/dashboard/users` *(Auth: JWT)*
-Daftar semua user.
+### GET `/dashboard/users` *(Auth required)*
+List all users.
 
-### POST `/dashboard/users` *(Auth: JWT, Admin only)*
-Tambah user baru. **Body:** `{ "username": "kasir1", "password": "pass", "name": "Kasir Satu", "role": "kasir" }`
+### POST `/dashboard/users` *(Auth required)*
+Add a new user.
 
-### DELETE `/dashboard/users/:id` *(Auth: JWT)*
-Hapus user. Tidak bisa hapus akun sendiri.
+**Body:** `{ "username": "kasir1", "password": "pass", "name": "Kasir Satu", "role": "kasir" }`
+
+### DELETE `/dashboard/users/:id` *(Auth required)*
+Delete a user. Cannot delete your own account.

@@ -1,23 +1,23 @@
 # Backend — Berkesan
 
-Backend dibangun dengan **Node.js + Express**, database **PostgreSQL** via `pg` Pool.
+Built with **Node.js + Express**, database **PostgreSQL** via `pg` Pool.
 
 ---
 
-## Struktur
+## Structure
 
 ```
 src/
-├── server.js               # Entry point — jalankan HTTP server
-├── app.js                  # Express setup: CORS, rate limit, routes
+├── server.js                   # Entry point — starts the HTTP server
+├── app.js                      # Express setup: middleware, CSP, routes
 ├── config/
-│   └── database.js         # pg Pool, konek via DATABASE_URL
+│   └── database.js             # pg Pool, connects via DATABASE_URL
 ├── controllers/
-│   ├── authController.js   # Login, register, list/delete user
-│   ├── menuController.js   # CRUD menu
-│   ├── orderController.js  # Buat & update order (publik)
-│   ├── kasirController.js  # Order view & update untuk kasir
-│   └── dashboardController.js  # Stats, rekap, stok, meja, laporan
+│   ├── authController.js       # Login, register, list/delete users
+│   ├── menuController.js       # CRUD menu items
+│   ├── orderController.js      # Create & update orders (public)
+│   ├── kasirController.js      # Order view & processing for kasir
+│   └── dashboardController.js  # Stats, recap, tables, reports
 ├── routes/
 │   ├── authRoutes.js
 │   ├── menuRoutes.js
@@ -25,53 +25,56 @@ src/
 │   ├── kasirRoutes.js
 │   └── dashboardRoutes.js
 ├── middleware/
-│   ├── auth.js             # Verifikasi JWT
+│   ├── auth.js                 # JWT verification
 │   └── errorHandler.js
+├── validations/                # Input validation helpers
 └── utils/
-    └── hash.js             # Helper bcrypt hash
+    └── hash.js                 # bcrypt helper
 ```
 
 ---
 
 ## Environment Variables
 
-| Variable | Keterangan |
-|----------|------------|
-| `DATABASE_URL` | PostgreSQL connection string (Railway inject otomatis) |
-| `JWT_SECRET` | Secret untuk sign JWT (min. 32 karakter) |
-| `FRONTEND_URL` | URL frontend Vercel (untuk CORS) |
-| `PORT` | Port server (Railway inject otomatis, default 3000) |
-| `NODE_ENV` | `production` atau `development` |
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Secret for signing JWT (min. 32 characters) |
+| `FRONTEND_URL` | Frontend URL for CORS (comma-separated for multiple) |
+| `PORT` | Server port (default: 3000) |
+| `NODE_ENV` | `production` or `development` |
 
 ---
 
-## Menjalankan Lokal
+## Running Locally
 
 ```bash
 npm install
-cp .env.example .env   # lalu isi DATABASE_URL, JWT_SECRET, dll
-npm run dev
+cp backend/.env.example backend/.env
+# fill in DATABASE_URL, JWT_SECRET, etc.
+npm run start
 ```
 
-Server berjalan di `http://localhost:3000`.
+Server runs at `http://localhost:3000`.
 
 ---
 
-## Endpoint Singkat
+## API Overview
 
-| Method | Path | Auth | Keterangan |
-|--------|------|------|------------|
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
 | POST | `/api/auth/login` | — | Login |
-| GET | `/api/menu` | — | Daftar menu aktif |
-| POST | `/api/menu` | — | Tambah menu |
-| PUT | `/api/menu/:id` | — | Update menu |
-| DELETE | `/api/menu/:id` | — | Hapus/nonaktifkan menu |
-| GET | `/api/order` | — | List order |
-| POST | `/api/order` | — | Buat order baru |
-| PATCH | `/api/order/:id/status` | — | Update status order |
-| GET | `/api/kasir/orders` | — | Order hari ini (kasir) |
-| PATCH | `/api/kasir/orders/:id/status` | — | Proses/selesaikan order |
-| GET | `/api/dashboard/stats` | JWT | Statistik hari ini |
-| GET | `/api/dashboard/rekap` | JWT | Rekap bulanan |
+| GET | `/api/menu` | — | List active menu items |
+| POST | `/api/menu` | — | Add menu item |
+| PUT | `/api/menu/:id` | — | Update menu item |
+| DELETE | `/api/menu/:id` | — | Delete/deactivate menu item |
+| POST | `/api/order` | — | Create new order |
+| GET | `/api/order` | — | List orders |
+| PATCH | `/api/order/:id/status` | — | Update order status |
+| GET | `/api/kasir/orders` | — | Today's orders (kasir view) |
+| PATCH | `/api/kasir/orders/:id/status` | — | Process/complete order |
+| GET | `/api/dashboard/stats` | JWT | Today's statistics |
+| GET | `/api/dashboard/rekap` | JWT | Monthly recap |
+| GET | `/api/dashboard/laporan` | JWT | Transaction report |
 
-Dokumentasi lengkap: [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md)
+Full documentation: [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md)
