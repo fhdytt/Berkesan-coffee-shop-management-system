@@ -146,15 +146,35 @@ function setLoading(on) {
 }
 
 function payIcon(method) {
-  return method === 'cash'
-    ? '<i class="fa-solid fa-money-bill-wave" style="color:var(--brand);font-size:11px;"></i> Cash'
-    : '<i class="fa-solid fa-qrcode" style="color:var(--gold);font-size:11px;"></i> QRIS';
+  const map = {
+    cash:     { icon: 'money-bill-wave',  color: 'var(--brand)', label: 'Cash'     },
+    qris:     { icon: 'qrcode',           color: 'var(--gold)',  label: 'QRIS'     },
+    debit:    { icon: 'credit-card',      color: '#3b82f6',      label: 'Debit'    },
+    credit:   { icon: 'credit-card',      color: '#8b5cf6',      label: 'Credit'   },
+    transfer: { icon: 'building-columns', color: '#0ea5e9',      label: 'Transfer' },
+    va:       { icon: 'building-columns', color: '#0ea5e9',      label: 'VA'       },
+    ewallet:  { icon: 'wallet',           color: '#10b981',      label: 'E-Wallet' },
+  };
+  const m = map[method] || { icon: 'circle-question', color: 'var(--muted)', label: method || '—' };
+  return `<i class="fa-solid fa-${m.icon}" style="color:${m.color};font-size:11px;"></i> ${m.label}`;
 }
 
 function statusBadge(st) {
   const map = { pending:'badge-pending', diproses:'badge-diproses', selesai:'badge-selesai', dibatalkan:'badge-dibatalkan' };
   const label = { pending:'menunggu bayar', diproses:'diproses', selesai:'selesai', dibatalkan:'dibatalkan' };
   return `<span class="badge ${map[st]||''}">${label[st] || st}</span>`;
+}
+
+function payStatusBadge(ps) {
+  const map = {
+    paid:    { cls: 'badge-selesai',    label: 'paid'    },
+    pending: { cls: 'badge-pending',    label: 'pending' },
+    unpaid:  { cls: 'badge-pending',    label: 'unpaid'  },
+    failed:  { cls: 'badge-dibatalkan', label: 'failed'  },
+    expired: { cls: 'badge-dibatalkan', label: 'expired' },
+  };
+  const m = map[ps] || { cls: '', label: ps || '—' };
+  return `<span class="badge ${m.cls}" style="font-size:10px;">${m.label}</span>`;
 }
 
 // ============================================
@@ -731,21 +751,6 @@ async function processPaymentAndPrint(orderId, orderCode, totalPrice) {
 // CETAK STRUK LANGSUNG (tanpa modal)
 // ============================================
 
-async function printReceiptDirect(orderId) {
-  try {
-    const orderRes = await fetch(`${API}/orders/${orderId}`, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    });
-    const orderData = await orderRes.json();
-    const order = orderData.data?.order || orderData.order;
-    const items = orderData.data?.items || orderData.items || [];
-    printReceipt(order, items);
-  } catch (error) {
-    console.error('Print error:', error);
-    showToast('Gagal mencetak struk: ' + error.message, 'error');
-  }
-}
-
 function callNext() {
   if (!pendingQueue.length) {
     showToast('Tidak ada antrian', 'warn');
@@ -1135,6 +1140,7 @@ function renderRiwayat(orders) {
         <td style="font-weight:700;">${fmtRp(o.total_price)}</td>
         <td>${payIcon(o.payment_method)}</td>
         <td>${statusBadge(o.status)}</td>
+        <td>${payStatusBadge(o.payment_status)}</td>
         <td style="color:var(--muted);font-size:11px;">${fmtTime(o.created_at)}</td>
         <td>
           <button class="btn btn-outline btn-sm" onclick="openOrderModal(${o.id})">
@@ -1233,7 +1239,7 @@ function handleLogout() {
 _autoRefresh = setInterval(() => {
   if (_currentSection === 'pesanan') loadOrders();
   if (_currentSection === 'antrian') loadAntrian();
-}, 30000);
+}, 10000);
 
 // ============================================
 // INIT

@@ -1,6 +1,6 @@
 # Brief Revisi — Berkesan POS
-**Versi:** 2.0  
-**Tanggal:** 4 Juli 2026  
+**Versi:** 2.1  
+**Tanggal:** 6 Juli 2026  
 **Project:** Berkesan Coffee Shop — Point of Sale & Ordering System  
 **Stack:** Express.js · PostgreSQL · Tailwind CSS (Vanilla JS)  
 **Tujuan saat ini:** Integrasi Payment Gateway
@@ -20,8 +20,20 @@ Project sudah berjalan dengan fitur inti yang stabil:
 - ✅ Schema database sudah *payment gateway ready* (tabel `payment_transactions`, `payment_webhook_logs`, kolom `gateway_reference_id`, `payment_url`, `payment_status`, dll.)
 - ✅ Fitur stok & bahan baku sudah dihapus (tidak digunakan)
 - ✅ Dependencies cross-platform — bisa jalan di Windows & Linux
+- ✅ `api.config.js` sudah punya `apiFetch` helper dengan auto-inject token
+- ✅ `.env.example` sudah ada placeholder Midtrans & Xendit (`MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `XENDIT_SECRET_KEY`, `XENDIT_WEBHOOK_TOKEN`, `PAYMENT_GATEWAY`, `MIDTRANS_ENV`)
 
 **Yang belum ada:** Implementasi payment gateway di backend maupun frontend.
+
+---
+
+## Changelog v2.1 (Audit 6 Juli 2026)
+
+Berikut item dari brief v2.0 yang **sudah selesai** dan tidak perlu dikerjakan lagi:
+
+| Item | Keterangan |
+|------|------------|
+| **F5** — Duplikasi `printReceiptDirect` | ✅ Sudah bersih — hanya ada 1 definisi yang menggunakan `apiFetch`. Definisi lama (raw `fetch`) sudah dihapus. |
 
 ---
 
@@ -54,7 +66,7 @@ POST  /api/payment/webhook/xendit     → Terima callback Xendit   (PUBLIC - tan
 #### B2. Tidak Ada Service Layer untuk Gateway
 
 **Status:** ❌ Belum dibuat  
-**Lokasi:** `backend/src/services/paymentService.js` (file ada tapi kosong — 0 bytes)
+**Lokasi:** `backend/src/services/paymentService.js` — file **tidak ada** (berbeda dari v2.0 yang menyebut "kosong", file sudah terhapus)
 
 Service ini akan menjadi abstraksi agar controller tidak bergantung langsung ke satu gateway. Fungsi yang perlu dibuat:
 
@@ -71,7 +83,7 @@ Dengan abstraksi ini, ganti dari Midtrans ke Xendit (atau sebaliknya) cukup di s
 #### B3. Tidak Ada Middleware Verifikasi Webhook
 
 **Status:** ❌ Belum dibuat  
-**Lokasi:** `backend/src/middleware/validateWebhookSignature.js`
+**Lokasi:** `backend/src/middleware/validateWebhookSignature.js` — file tidak ada
 
 Setiap callback dari gateway harus diverifikasi signature-nya sebelum diproses. Tanpa ini, endpoint webhook bisa dieksploitasi oleh pihak luar untuk memalsukan konfirmasi pembayaran.
 
@@ -83,7 +95,7 @@ Setiap callback dari gateway harus diverifikasi signature-nya sebelum diproses. 
 #### B4. `app.js` Belum Mendaftarkan Route Payment
 
 **Status:** ❌ Belum ditambahkan  
-**Lokasi:** `backend/src/app.js` baris route
+**Lokasi:** `backend/src/app.js` — route payment belum ada
 
 Setelah `paymentRoutes.js` dibuat, perlu didaftarkan:
 
@@ -92,16 +104,18 @@ const paymentRouter = require("./routes/paymentRoutes");
 app.use("/api/payment", paymentRouter);
 ```
 
-> **Penting:** Rate limiter general (60 req/menit) tidak boleh diaplikasikan ke route webhook karena gateway bisa mengirim callback dalam jumlah banyak dalam waktu singkat. Kecualikan `/api/payment/webhook/*` dari rate limiter.
+> **Penting:** Rate limiter general (60 req/menit) saat ini di-apply ke semua route via `app.use(generalLimiter)`. Route webhook harus dikecualikan karena gateway bisa mengirim callback dalam jumlah banyak dalam waktu singkat. Gunakan `skip` function pada `generalLimiter` atau terapkan limiter terpisah.
 
 ---
 
 #### B5. Variabel Environment Payment Gateway Belum Lengkap
 
-**Status:** ⚠️ Placeholder ada, belum diisi  
+**Status:** ⚠️ Placeholder ada, belum lengkap  
 **Lokasi:** `backend/.env.example`
 
-Sudah ada placeholder untuk Midtrans dan Xendit, tapi belum ada variabel:
+Sudah ada: `PAYMENT_GATEWAY`, `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_ENV`, `XENDIT_SECRET_KEY`, `XENDIT_WEBHOOK_TOKEN`
+
+Yang belum ada:
 - `PAYMENT_WEBHOOK_BASE_URL` — URL publik server untuk menerima callback (wajib diisi, tidak bisa `localhost`)
 - `PAYMENT_TIMEOUT_MINUTES` — durasi sebelum link pembayaran expired (default 60 menit)
 
@@ -109,16 +123,18 @@ Sudah ada placeholder untuk Midtrans dan Xendit, tapi belum ada variabel:
 
 #### B6. Filter Laporan Tidak Konsisten dengan Schema Baru
 
-**Status:** ⚠️ Perlu diperbaiki  
+**Status:** ❌ Belum diperbaiki  
 **Lokasi:** `backend/src/controllers/dashboardController.js`
 
-Query statistik pendapatan masih menggunakan `status != 'dibatalkan'` sebagai filter, padahal schema baru memisahkan status pesanan (`status`) dari status bayar (`payment_status`). Dengan arsitektur gateway, order bisa berstatus `diproses` tapi belum tentu `payment_status = 'paid'` (misalnya customer pilih VA tapi belum transfer).
+Query masih menggunakan `status != 'dibatalkan'` di **8 tempat** (dikonfirmasi dari audit kode):
+- `getRekap` — 5 query (summary, prevSummary, daily, bestProducts, salesChart)
+- `getDashboardStats` — 3 query (`incomeToday`, `productsSold`, `salesChart`)
+
+Dengan arsitektur gateway, order bisa berstatus `diproses` tapi belum tentu `payment_status = 'paid'`. Filter lama akan menghitung pendapatan dari order yang belum benar-benar dibayar.
 
 **Yang perlu diubah:**
-- `getRekap` — ganti `status != 'dibatalkan'` → `payment_status = 'paid'`
-- `getDashboardStats` — ganti filter yang sama di query `incomeToday` dan `totalSold`
-
-Gunakan view `daily_sales` yang sudah ada di schema untuk menyederhanakan query ini.
+- Semua query revenue/income: ganti `status != 'dibatalkan'` → tambahkan kondisi `AND payment_status = 'paid'`
+- Gunakan view `daily_sales` yang sudah ada di schema untuk query harian agar tidak duplikasi logika
 
 ---
 
@@ -129,9 +145,9 @@ Gunakan view `daily_sales` yang sudah ada di schema untuk menyederhanakan query 
 #### F1. Modal Pembayaran Kasir Hanya Ada Cash & QRIS
 
 **Status:** ❌ Perlu diperluas  
-**Lokasi:** `frontend/public/assets/js/kasir.js` — fungsi `openPaymentModal()`
+**Lokasi:** `frontend/public/assets/js/kasir.js` — fungsi `openPaymentModal()` baris 534
 
-Tombol metode pembayaran hardcode hanya dua:
+Tombol metode pembayaran hardcode hanya dua (dikonfirmasi dari audit):
 ```js
 <button data-method="cash">Cash</button>
 <button data-method="qris">QRIS</button>
@@ -145,18 +161,19 @@ Schema dan backend sudah mendukung: `cash, qris, transfer, debit, credit, va, ew
 
 #### F2. Fungsi `payIcon()` Hanya Kenal Cash & QRIS
 
-**Status:** ❌ Perlu diperluas  
-**Lokasi:** `frontend/public/assets/js/kasir.js` baris 148
+**Status:** ❌ Belum diperbaiki  
+**Lokasi:** `frontend/public/assets/js/kasir.js` baris ~148
 
+Kondisi aktual (dikonfirmasi audit):
 ```js
 function payIcon(method) {
   return method === 'cash'
-    ? '... Cash'
-    : '... QRIS';  // semua selain cash → ikon QRIS
+    ? '<i class="fa-solid fa-money-bill-wave" ...></i> Cash'
+    : '<i class="fa-solid fa-qrcode" ...></i> QRIS';  // semua selain cash → ikon QRIS
 }
 ```
 
-Order dengan `payment_method = 'transfer'`, `'debit'`, atau `'va'` akan tampil sebagai ikon QRIS di kartu order, tabel riwayat, dan tampilan antrian. Sangat menyesatkan kasir.
+Order dengan `payment_method = 'transfer'`, `'debit'`, atau `'va'` akan tampil sebagai ikon QRIS. Sangat menyesatkan kasir.
 
 **Yang perlu dibuat:**
 ```js
@@ -171,7 +188,7 @@ function payIcon(method) {
     credit:   { icon: 'credit-card',      label: 'Credit'   },
   };
   const m = map[method] || { icon: 'circle-question', label: method || '—' };
-  return `<i class="fa-solid fa-${m.icon}"></i> ${m.label}`;
+  return `<i class="fa-solid fa-${m.icon}" style="font-size:11px;"></i> ${m.label}`;
 }
 ```
 
@@ -180,54 +197,52 @@ function payIcon(method) {
 #### F3. Tabel Riwayat Tidak Menampilkan `payment_status`
 
 **Status:** ❌ Belum ada  
-**Lokasi:** `frontend/public/assets/js/kasir.js` — fungsi `renderRiwayat()`
+**Lokasi:** `frontend/public/assets/js/kasir.js` — fungsi `renderRiwayat()` baris ~1096
 
 Kolom tabel riwayat saat ini: `Order Code | Customer | Item | Total | Metode | Status | Waktu | Aksi`
 
-Tidak ada kolom `payment_status`. Dengan gateway aktif nanti, kasir perlu tahu apakah pembayaran sudah `paid` atau masih `pending` (misalnya customer pilih VA tapi belum transfer). Tanpa ini kasir tidak bisa membedakan order yang benar-benar lunas.
+Tidak ada kolom `payment_status`. Dengan gateway aktif nanti, kasir perlu tahu apakah pembayaran sudah `paid` atau masih `pending`.
 
-**Yang perlu ditambahkan:** Badge `payment_status` di kolom sendiri atau di samping kolom `Status` — hijau untuk `paid`, kuning untuk `pending`, merah untuk `failed/unpaid`.
+**Yang perlu ditambahkan:** Badge `payment_status` di kolom sendiri atau di samping kolom `Status`:
+- Hijau → `paid`
+- Kuning → `pending`
+- Merah → `failed` / `unpaid`
 
 ---
 
 #### F4. Auto-refresh 30 Detik — Terlalu Lambat untuk Gateway
 
-**Status:** ⚠️ Perlu dipercepat  
-**Lokasi:** `frontend/public/assets/js/kasir.js` baris paling bawah
+**Status:** ❌ Belum diubah  
+**Lokasi:** `frontend/public/assets/js/kasir.js` baris ~1233
 
+Kondisi aktual (dikonfirmasi audit):
 ```js
 _autoRefresh = setInterval(() => {
   if (_currentSection === 'pesanan') loadOrders();
   if (_currentSection === 'antrian') loadAntrian();
-}, 30000); // 30 detik
+}, 30000); // masih 30 detik
 ```
 
-Saat payment gateway aktif, konfirmasi pembayaran (webhook) bisa masuk kapan saja. Dengan interval 30 detik, kasir harus menunggu hampir setengah menit sebelum status order berubah. Ini membuat pengalaman kasir buruk.
+Saat payment gateway aktif, konfirmasi pembayaran (webhook) bisa masuk kapan saja. Dengan 30 detik, kasir harus menunggu hampir setengah menit sebelum status berubah.
 
-**Solusi jangka pendek:** Ubah interval ke `10000` (10 detik).  
-**Solusi jangka panjang:** Implementasi SSE (Server-Sent Events) — server push notifikasi ke browser saat webhook masuk, tanpa perlu polling.
+**Solusi jangka pendek:** Ubah `30000` → `10000` (10 detik).  
+**Solusi jangka panjang:** Implementasi SSE (Server-Sent Events) — push notifikasi ke browser saat webhook masuk.
 
 ---
 
-#### F5. Duplikasi Fungsi `printReceiptDirect`
+#### F5. ~~Duplikasi Fungsi `printReceiptDirect`~~ — SELESAI ✅
 
-**Status:** ❌ Bug — Perlu segera diperbaiki  
-**Lokasi:** `frontend/public/assets/js/kasir.js` baris 734 dan 770
-
-Fungsi `printReceiptDirect` didefinisikan **dua kali**. Definisi pertama (baris 734) menggunakan `fetch` langsung. Definisi kedua (baris 770) menggunakan `apiFetch` (helper yang sudah ada).
-
-Definisi kedua menimpa yang pertama — tapi keberadaan dua definisi adalah tanda kode belum dibersihkan dan bisa menyebabkan kebingungan saat debugging.
-
-**Yang perlu dilakukan:** Hapus definisi pertama (baris 734) yang menggunakan `fetch` langsung. Pertahankan definisi kedua yang menggunakan `apiFetch`.
+**Status:** ✅ Sudah bersih per audit 6 Juli 2026  
+Hanya ada 1 definisi, menggunakan `apiFetch`. Tidak ada action diperlukan.
 
 ---
 
 #### F6. Halaman Order Customer — QRIS Hanya Mode Statis
 
 **Status:** ⚠️ Perlu dipersiapkan  
-**Lokasi:** `frontend/public/assets/js/order.js` — fungsi `openQrisModal()`
+**Lokasi:** `frontend/public/assets/js/order.js` — fungsi `openQrisModal()` baris ~246
 
-Saat ini QRIS hanya menampilkan gambar QR statis milik owner. Customer harus input nominal sendiri saat scan. Tidak ada verifikasi otomatis pembayaran.
+Kondisi aktual: `openQrisModal()` hanya menampilkan gambar QR statis (foto QRIS owner). Customer input nominal sendiri. Tidak ada verifikasi otomatis.
 
 Untuk mode manual (tanpa gateway) ini masih acceptable — kasir yang konfirmasi. Tapi saat gateway aktif, flow harus berubah total:
 1. Order dibuat → backend panggil gateway → dapat `payment_url` / QR dinamis
@@ -235,7 +250,7 @@ Untuk mode manual (tanpa gateway) ini masih acceptable — kasir yang konfirmasi
 3. Frontend polling `/api/payment/:orderId/status` sampai `payment_status = 'paid'`
 4. Setelah paid → tampilkan halaman sukses + nomor antrian
 
-**Yang perlu disiapkan sekarang:**
+**Yang perlu disiapkan:**
 - Pisahkan modal QRIS menjadi dua mode: `manual` dan `gateway`
 - Mode dikendalikan oleh flag di `api.config.js` (misal `window.PAYMENT_MODE = 'manual'`)
 - Saat mode `gateway`: tampilkan QR dari `payment_url`, lakukan polling status
@@ -245,9 +260,9 @@ Untuk mode manual (tanpa gateway) ini masih acceptable — kasir yang konfirmasi
 #### F7. Halaman Order Customer — Pilihan Metode Pembayaran Terbatas
 
 **Status:** ⚠️ Perlu ditambah  
-**Lokasi:** `frontend/public/assets/js/order.js` — fungsi `submitOrder()` dan UI checkout
+**Lokasi:** `frontend/public/pages/order.html` baris ~185 + `frontend/public/assets/js/order.js`
 
-`selectedPayment` defaultnya `"qris"`, pilihan di UI hanya QRIS dan Cash. Debit belum ada sebagai opsi untuk customer.
+Kondisi aktual (dikonfirmasi audit): UI checkout hanya punya dua tombol `data-payment="qris"` dan `data-payment="cash"`. `selectedPayment` default `"qris"`. Debit belum ada sebagai opsi customer.
 
 ---
 
@@ -268,33 +283,33 @@ Tabel `payment_transactions` dan `payment_webhook_logs` sudah ada di schema. Tid
 **Status:** ⚠️ Minor  
 **Lokasi:** `backend/database/dummy_data.sql`
 
-Data dummy order yang sudah ada menggunakan `status` lama tanpa mengisi `payment_status` secara eksplisit. Ini tidak masalah karena default schema sudah `payment_status = 'unpaid'`, tapi laporan yang filter `payment_status = 'paid'` akan menampilkan 0 data saat testing dengan data dummy.
+Data dummy order tidak mengisi `payment_status` secara eksplisit. Default schema `payment_status = 'unpaid'` sehingga laporan yang filter `payment_status = 'paid'` akan menampilkan 0 data saat testing.
 
-**Yang perlu dilakukan:** Update `dummy_data.sql` agar beberapa order dummy memiliki `payment_status = 'paid'` dan `paid_at` terisi, supaya dashboard dan laporan bisa ditest dengan data yang realistis.
+**Yang perlu dilakukan:** Update beberapa order dummy dengan `payment_status = 'paid'` dan `paid_at` terisi supaya dashboard dan laporan bisa ditest dengan data realistis.
 
 ---
 
 ## Urutan Pengerjaan
 
 ```
-Tahap 1 — Perbaikan Cepat (bisa dikerjakan paralel)
+Tahap 1 — Perbaikan Cepat (bisa dikerjakan paralel, tidak blokir gateway)
 ├── F2: Perluas fungsi payIcon() untuk semua metode
 ├── F3: Tambah kolom payment_status di tabel riwayat kasir
 ├── F4: Ubah auto-refresh dari 30s → 10s
-├── F5: Hapus duplikasi printReceiptDirect
-└── B6: Perbaiki filter laporan ke payment_status = 'paid'
+└── B6: Perbaiki filter laporan ke payment_status = 'paid' (8 query di dashboardController)
 
 Tahap 2 — Fondasi Gateway (sebelum integrasi API)
 ├── B2: Buat paymentService.js (abstraksi layer, stub dulu)
 ├── B3: Buat validateWebhookSignature.js middleware
 ├── B1: Buat paymentController.js + paymentRoutes.js
-├── B4: Daftarkan ke app.js + exclude dari rate limiter
-└── B5: Tambah variabel env yang kurang di .env.example
+├── B4: Daftarkan ke app.js + exclude webhook dari rate limiter
+└── B5: Tambah PAYMENT_WEBHOOK_BASE_URL, PAYMENT_TIMEOUT_MINUTES di .env.example
 
 Tahap 3 — Frontend Siap Gateway
 ├── F1: Tambah tombol Debit & Transfer di modal bayar kasir
 ├── F6: Pisahkan modal QRIS manual vs gateway di order page
 ├── F7: Tambah opsi Debit di checkout customer
+├── api.config.js: Tambah flag PAYMENT_MODE
 └── D2: Update dummy_data.sql agar ada order dengan payment_status = 'paid'
 
 Tahap 4 — Integrasi Gateway (setelah diskusi gateway & credentials)
@@ -325,20 +340,26 @@ Tahap 4 — Integrasi Gateway (setelah diskusi gateway & credentials)
 |---|---|
 | `backend/src/controllers/paymentController.js` | Handler create transaksi, webhook, cek status |
 | `backend/src/routes/paymentRoutes.js` | Route `/api/payment/...` |
-| `backend/src/services/paymentService.js` | Abstraksi Midtrans / Xendit (file kosong sudah ada) |
+| `backend/src/services/paymentService.js` | Abstraksi Midtrans / Xendit (file tidak ada, perlu dibuat dari nol) |
 | `backend/src/middleware/validateWebhookSignature.js` | Verifikasi HMAC signature webhook |
 
 ### Dimodifikasi
 | File | Yang Diubah |
 |---|---|
-| `backend/src/app.js` | Tambah route payment, exclude webhook dari rate limiter |
-| `backend/src/controllers/dashboardController.js` | Ganti filter `status` → `payment_status = 'paid'` |
+| `backend/src/app.js` | Tambah route payment, exclude `/api/payment/webhook/*` dari rate limiter |
+| `backend/src/controllers/dashboardController.js` | Ganti 8 filter `status != 'dibatalkan'` → `payment_status = 'paid'` |
 | `backend/.env.example` | Tambah `PAYMENT_WEBHOOK_BASE_URL`, `PAYMENT_TIMEOUT_MINUTES` |
-| `frontend/public/assets/js/kasir.js` | Perluas `payIcon()`, tambah `payment_status` di riwayat, percepat auto-refresh, hapus duplikasi `printReceiptDirect`, tambah tombol Debit/Transfer di modal bayar |
+| `frontend/public/assets/js/kasir.js` | Perluas `payIcon()`, tambah `payment_status` di riwayat, ubah auto-refresh 30s→10s, tambah tombol Debit/Transfer di modal bayar |
 | `frontend/public/assets/js/order.js` | Siapkan dua mode QRIS, tambah opsi Debit |
+| `frontend/public/pages/order.html` | Tambah tombol `data-payment="debit"` di checkout |
 | `frontend/public/assets/js/api.config.js` | Tambah flag `PAYMENT_MODE` |
 | `backend/database/dummy_data.sql` | Update beberapa order dummy dengan `payment_status = 'paid'` |
 
+### Sudah Selesai (tidak perlu disentuh)
+| File | Keterangan |
+|---|---|
+| `frontend/public/assets/js/kasir.js` | Duplikasi `printReceiptDirect` sudah dihapus ✅ |
+
 ---
 
-*Dokumen ini mencerminkan kondisi kode aktual per 4 Juli 2026. Diperbarui setelah audit menyeluruh seluruh controller, routes, dan frontend JS.*
+*Dokumen ini mencerminkan kondisi kode aktual per 6 Juli 2026 (audit manual seluruh controller, routes, dan frontend JS). Versi sebelumnya: v2.0 tanggal 4 Juli 2026.*

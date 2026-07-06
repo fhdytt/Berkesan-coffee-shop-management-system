@@ -51,12 +51,12 @@ exports.getRekap = async (req, res) => {
              JOIN orders o2 ON o2.id = oi.order_id
              WHERE EXTRACT(MONTH FROM o2.created_at) = $1 
                AND EXTRACT(YEAR FROM o2.created_at) = $2 
-               AND o2.status != 'dibatalkan'
+               AND o2.payment_status = 'paid'
            ), 0) AS "totalSold"
          FROM orders 
          WHERE EXTRACT(MONTH FROM created_at) = $1 
            AND EXTRACT(YEAR FROM created_at) = $2 
-           AND status != 'dibatalkan'`,
+           AND payment_status = 'paid'`,
         [m, y]
       ),
       db.query(
@@ -66,7 +66,7 @@ exports.getRekap = async (req, res) => {
          FROM orders 
          WHERE EXTRACT(MONTH FROM created_at) = $1 
            AND EXTRACT(YEAR FROM created_at) = $2 
-           AND status != 'dibatalkan'`,
+           AND payment_status = 'paid'`,
         [prevMonth, prevYear]
       ),
       db.query(
@@ -76,7 +76,7 @@ exports.getRekap = async (req, res) => {
          FROM orders 
          WHERE EXTRACT(MONTH FROM created_at) = $1 
            AND EXTRACT(YEAR FROM created_at) = $2 
-           AND status != 'dibatalkan'
+           AND payment_status = 'paid'
          GROUP BY created_at::date 
          ORDER BY tanggal ASC`,
         [m, y]
@@ -90,7 +90,7 @@ exports.getRekap = async (req, res) => {
          JOIN orders o ON o.id = oi.order_id
          WHERE EXTRACT(MONTH FROM o.created_at) = $1 
            AND EXTRACT(YEAR FROM o.created_at) = $2 
-           AND o.status != 'dibatalkan'
+           AND o.payment_status = 'paid'
          GROUP BY menu_name 
          ORDER BY revenue DESC 
          LIMIT 5`,
@@ -104,7 +104,7 @@ exports.getRekap = async (req, res) => {
          FROM orders 
          WHERE EXTRACT(MONTH FROM created_at) = $1 
            AND EXTRACT(YEAR FROM created_at) = $2 
-           AND status != 'dibatalkan'
+           AND payment_status = 'paid'
          GROUP BY payment_method`,
         [m, y]
       ),
@@ -461,14 +461,14 @@ exports.getDashboardStats = async (req, res) => {
     const [summary, bestProducts, unavailableMenus, recentOrders, salesChart] = await Promise.all([
       db.query(`
         SELECT
-          COALESCE(SUM(CASE WHEN created_at::date = CURRENT_DATE AND status != 'dibatalkan' THEN total_price END), 0) AS "incomeToday",
+          COALESCE(SUM(CASE WHEN created_at::date = CURRENT_DATE AND payment_status = 'paid' THEN total_price END), 0) AS "incomeToday",
           COUNT(CASE WHEN created_at::date = CURRENT_DATE THEN 1 END) AS "ordersToday",
           COALESCE((
             SELECT SUM(oi.quantity) 
             FROM order_items oi 
             JOIN orders o2 ON o2.id = oi.order_id
             WHERE o2.created_at::date = CURRENT_DATE 
-              AND o2.status != 'dibatalkan'
+              AND o2.payment_status = 'paid'
           ), 0) AS "productsSold"
         FROM orders
       `),
@@ -508,7 +508,7 @@ exports.getDashboardStats = async (req, res) => {
           SUM(total_price) AS total
         FROM orders
         WHERE created_at >= CURRENT_DATE - INTERVAL '6 days' 
-          AND status != 'dibatalkan'
+          AND payment_status = 'paid'
         GROUP BY created_at::date 
         ORDER BY tanggal ASC
       `),
