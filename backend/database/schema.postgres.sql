@@ -1,12 +1,5 @@
 -- ============================================
--- DATABASE COFFEE SHOP (REVISED - PAYMENT GATEWAY READY)
--- ============================================
--- Perubahan dari versi sebelumnya:
--- 1. Tabel `orders`: pisah `status` (progress pesanan) dari `payment_status`
---    (status pembayaran), tambah kolom generic untuk gateway
--- 2. Tabel baru `payment_transactions`: catat setiap attempt pembayaran
--- 3. Tabel baru `payment_webhook_logs`: audit trail semua callback gateway
--- 4. `payment_method` CHECK diperluas biar sesuai channel gateway umum
+-- DATABASE COFFEE SHOP 
 -- ============================================
 
 -- 1. USERS
@@ -79,8 +72,8 @@ CREATE TABLE IF NOT EXISTS orders (
                                 'expired', 'cancelled', 'refunded', 'partial_refund'
                             )),
 
-    -- kolom generic untuk gateway apapun (Midtrans/Xendit/dll)
-    gateway_name            VARCHAR(50),          -- ex: 'midtrans', 'xendit', 'manual'
+    -- kolom generic untuk gateway apapun 
+    gateway_name            VARCHAR(50),          
     gateway_reference_id    VARCHAR(150),         -- transaction_id / external_id dari gateway
     payment_url             TEXT,                 -- snap_token url / invoice_url
     expired_at              TIMESTAMPTZ,          -- kapan link/QR pembayaran expired

@@ -21,18 +21,18 @@ const pool = new Pool(poolConfig);
 
 // Event listeners untuk monitoring
 pool.on("connect", () => {
-  console.log("📦 Database connected successfully");
+  console.log("Database connected successfully");
 });
 
 pool.on("error", (err) => {
-  console.error("❌ Unexpected database error:", err.message);
+  console.error("Unexpected database error:", err.message);
   // Jangan exit process, biar retry connection
 });
 
 pool.on("acquire", () => {
   // Optional: untuk debugging connection leak
   if (process.env.NODE_ENV === "development") {
-    console.debug("🔌 Client acquired from pool");
+    console.debug("Client acquired from pool");
   }
 });
 
@@ -45,15 +45,15 @@ const testConnection = async () => {
     try {
       const client = await pool.connect();
       const result = await client.query("SELECT NOW() as time");
-      console.log(`✅ Database connected at ${result.rows[0].time}`);
+      console.log(`Database connected at ${result.rows[0].time}`);
       client.release();
       return true;
     } catch (err) {
       retries++;
-      console.error(`⚠️ Database connection attempt ${retries}/${maxRetries} failed:`, err.message);
+      console.error(`Database connection attempt ${retries}/${maxRetries} failed:`, err.message);
       
       if (retries === maxRetries) {
-        console.error("❌ Failed to connect to database after multiple attempts");
+        console.error("Failed to connect to database after multiple attempts");
         process.exit(1);
       }
       
@@ -74,12 +74,12 @@ const query = async (text, params, client = null) => {
     
     // Log slow queries (> 100ms) di development
     if (process.env.NODE_ENV === "development" && duration > 100) {
-      console.warn(`⚠️ Slow query (${duration}ms):`, { text, params });
+      console.warn(`Slow query (${duration}ms):`, { text, params });
     }
     
     return result;
   } catch (error) {
-    console.error("❌ Query error:", { 
+    console.error("Query error:", { 
       text, 
       params, 
       error: error.message,

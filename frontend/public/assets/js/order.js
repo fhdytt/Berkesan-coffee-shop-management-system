@@ -191,6 +191,7 @@ function openCheckout() {
 function closeCheckout() {
   const modal = document.getElementById("checkoutModal");
   if (modal) modal.classList.remove("open");
+  resetCheckoutDragPosition();
 }
 
 // ─── Submit order ─────────────────────────────────────────────
@@ -391,6 +392,62 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.fill();
 }
 
+// ─── Swipe-to-close: Checkout Modal (mobile) ───────────────────
+
+function resetCheckoutDragPosition() {
+  const box = document.getElementById("checkoutModalBox");
+  if (!box) return;
+  box.style.transition = "";
+  box.style.transform = "";
+}
+
+function initCheckoutSwipeToClose() {
+  const modalBox = document.getElementById("checkoutModalBox");
+  const dragHandle = document.getElementById("checkoutDragHandle");
+  if (!modalBox || !dragHandle) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+
+  function onTouchStart(e) {
+    isDragging = true;
+    startY = e.touches[0].clientY;
+    modalBox.style.transition = "none";
+  }
+
+  function onTouchMove(e) {
+    if (!isDragging) return;
+    currentY = e.touches[0].clientY - startY;
+    // Hanya izinkan geser ke bawah
+    if (currentY > 0) {
+      modalBox.style.transform = `translateY(${currentY}px)`;
+    }
+  }
+
+  function onTouchEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    modalBox.style.transition = "transform 200ms ease";
+
+    // Kalau geser lebih dari 100px, tutup modal
+    if (currentY > 100) {
+      modalBox.style.transform = "translateY(100%)";
+      setTimeout(() => {
+        closeCheckout();
+      }, 200);
+    } else {
+      // Kalau tidak cukup jauh, kembali ke posisi semula
+      modalBox.style.transform = "";
+    }
+    currentY = 0;
+  }
+
+  dragHandle.addEventListener("touchstart", onTouchStart, { passive: true });
+  dragHandle.addEventListener("touchmove", onTouchMove, { passive: true });
+  dragHandle.addEventListener("touchend", onTouchEnd);
+}
+
 // ─── Event listeners ──────────────────────────────────────────
 
 document.getElementById("saveTableBtn")?.addEventListener("click", () =>
@@ -420,3 +477,4 @@ document.querySelectorAll(".payment-btn").forEach((btn) => {
 setTable(tableNumber);
 loadMenus();
 updateCart();
+initCheckoutSwipeToClose();

@@ -139,9 +139,11 @@ window.addEventListener("load", () => {
       const token = localStorage.getItem('token');
       options.headers = {
         'ngrok-skip-browser-warning': 'true',
+        'Cache-Control': 'no-cache',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         ...options.headers,
       };
+      options.cache = 'no-store';   // <-- tambahan ini kunci fix-nya
       const res = await fetch(url, options);
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || json.message || 'HTTP ' + res.status);
