@@ -37,6 +37,20 @@ Berikut item dari brief v2.0 yang **sudah selesai** dan tidak perlu dikerjakan l
 
 ---
 
+## Changelog v2.2 (6 Juli 2026 — Tahap 1 Selesai)
+
+Semua item Tahap 1 telah dikerjakan:
+
+| Item | Keterangan |
+|------|------------|
+| **F2** — `payIcon()` | ✅ Support 7 metode: cash, qris, debit, credit, transfer, va, ewallet + fallback unknown |
+| **F3** — Kolom `payment_status` di riwayat | ✅ Fungsi `payStatusBadge()` ditambah, kolom `Status Bayar` di thead + tbody, colspan 8→9 |
+| **F4** — Auto-refresh | ✅ `30000` → `10000` (10 detik) |
+| **F5** — Duplikasi `printReceiptDirect` | ✅ Definisi raw `fetch` dihapus, tersisa hanya yang pakai `apiFetch` |
+| **B6** — Filter laporan dashboard | ✅ 8 query di `dashboardController.js` ganti `status != 'dibatalkan'` → `payment_status = 'paid'` |
+
+---
+
 ## Gap Analysis — Menuju Payment Gateway
 
 ### BACKEND
@@ -123,7 +137,7 @@ Yang belum ada:
 
 #### B6. Filter Laporan Tidak Konsisten dengan Schema Baru
 
-**Status:** ❌ Belum diperbaiki  
+**Status:** ✅ Selesai (v2.2)  
 **Lokasi:** `backend/src/controllers/dashboardController.js`
 
 Query masih menggunakan `status != 'dibatalkan'` di **8 tempat** (dikonfirmasi dari audit kode):
@@ -161,7 +175,7 @@ Schema dan backend sudah mendukung: `cash, qris, transfer, debit, credit, va, ew
 
 #### F2. Fungsi `payIcon()` Hanya Kenal Cash & QRIS
 
-**Status:** ❌ Belum diperbaiki  
+**Status:** ✅ Selesai (v2.2)  
 **Lokasi:** `frontend/public/assets/js/kasir.js` baris ~148
 
 Kondisi aktual (dikonfirmasi audit):
@@ -196,7 +210,7 @@ function payIcon(method) {
 
 #### F3. Tabel Riwayat Tidak Menampilkan `payment_status`
 
-**Status:** ❌ Belum ada  
+**Status:** ✅ Selesai (v2.2)  
 **Lokasi:** `frontend/public/assets/js/kasir.js` — fungsi `renderRiwayat()` baris ~1096
 
 Kolom tabel riwayat saat ini: `Order Code | Customer | Item | Total | Metode | Status | Waktu | Aksi`
@@ -212,7 +226,7 @@ Tidak ada kolom `payment_status`. Dengan gateway aktif nanti, kasir perlu tahu a
 
 #### F4. Auto-refresh 30 Detik — Terlalu Lambat untuk Gateway
 
-**Status:** ❌ Belum diubah  
+**Status:** ✅ Selesai (v2.2) — diubah ke 10 detik  
 **Lokasi:** `frontend/public/assets/js/kasir.js` baris ~1233
 
 Kondisi aktual (dikonfirmasi audit):

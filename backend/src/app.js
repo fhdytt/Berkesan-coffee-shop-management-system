@@ -1,8 +1,8 @@
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const path = require("path");
 
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
@@ -22,31 +22,30 @@ const app = express();
 // SECURITY MIDDLEWARE
 // ============================================
 
-// Helmet untuk security headers
+// Helmet untuk security headers — CSP tidak diperlukan karena backend hanya melayani API
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-      scriptSrcAttr: ["'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-    },
-  },
+  contentSecurityPolicy: false,
 }));
 
 // CORS configuration
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? process.env.FRONTEND_URL.split(',')
-  : ['http://localhost:3000', 'https://berkesan.tail119566.ts.net'];
+// FRONTEND_URL di .env diisi URL Vercel (bisa lebih dari satu, pisah koma)
+// Contoh: FRONTEND_URL=https://berkesan.vercel.app,https://berkesan-coffee.vercel.app
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(u => u.trim())
+  : ['http://localhost:3000', 'http://127.0.0.1:5500'];
 
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl)
+  origin: function (origin, callback) {
+    // Izinkan request tanpa origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      // Izinkan semua subdomain *.vercel.app (preview deployments)
+      /^https:\/\/[a-z0-9-]+-[a-z0-9]+-[a-z0-9]+\.vercel\.app$/.test(origin) ||
+      /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin);
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -102,13 +101,6 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ============================================
-// STATIC FILES (Frontend)
-// ============================================
-
-const frontendPath = path.join(__dirname, "../../frontend/public");
-app.use(express.static(frontendPath, { redirect: false }));
-
-// ============================================
 // HEALTH CHECK (for monitoring)
 // ============================================
 
@@ -119,38 +111,6 @@ app.get("/health", (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
   });
-});
-
-// ============================================
-// FRONTEND ROUTES
-// ============================================
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
-});
-
-app.get("/order", (req, res) => {
-  res.sendFile(path.join(frontendPath, "pages/order.html"));
-});
-
-app.get("/about", (req, res) => {
-  res.sendFile(path.join(frontendPath, "pages/about.html"));
-});
-
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(frontendPath, "pages/login.html"));
-});
-
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(frontendPath, "admin/index.html"));
-});
-
-app.get("/admin/", (req, res) => {
-  res.sendFile(path.join(frontendPath, "admin/index.html"));
-});
-
-app.get("/kasir", (req, res) => {
-  res.sendFile(path.join(frontendPath, "kasir/index.html"));
 });
 
 // ============================================
